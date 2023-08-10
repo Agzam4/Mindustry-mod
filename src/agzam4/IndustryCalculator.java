@@ -43,6 +43,7 @@ import mindustry.world.blocks.production.SolidPump;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild;
 import mindustry.world.consumers.Consume;
+import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
 
@@ -332,66 +333,35 @@ public class IndustryCalculator {
 			if(building == null) continue;
 
 			float craftSpeed = ModWork.getCraftSpeed(building);
-			if(building instanceof DrillBuild) {
-				DrillBuild drill = (DrillBuild) building;
-				itemsBalance[drill.dominantItem.id] += drill.lastDrillSpeed*60*drill.timeScale();
-			}
 
-			if(building instanceof UnitFactoryBuild && block instanceof UnitFactory) {
-				int plan = ((UnitFactoryBuild)building).currentPlan;
-				if(plan != -1) {
-					ItemStack[] requirements = ((UnitFactory)block).plans.get(plan).requirements;
-					for (int i = 0; i < requirements.length; i++) {
-						ItemStack stack = requirements[i];
-						float ips = craftSpeed*stack.amount*building.timeScale();
-						itemsBalance[stack.item.id] -= ips;
-					}
-				}
-			}
+//			if(building instanceof UnitFactoryBuild && block instanceof UnitFactory) {
+//				int plan = ((UnitFactoryBuild)building).currentPlan;
+//				if(plan != -1) {
+//					ItemStack[] requirements = ((UnitFactory)block).plans.get(plan).requirements;
+//					for (int i = 0; i < requirements.length; i++) {
+//						ItemStack stack = requirements[i];
+//						float ips = craftSpeed*stack.amount*building.timeScale();
+//						itemsBalance[stack.item.id] -= ips;
+//					}
+//				}
+//			}
 
-			if(building instanceof PumpBuild && block instanceof Pump) {
-				PumpBuild pump = (PumpBuild) building;
-				if(pump.liquidDrop != null) {
-					float lps = pump.amount * ((Pump)block).pumpAmount * 60f * building.timeScale();
-					liquidBalance[pump.liquidDrop.id] += lps;
-				}
-			}
+			ModWork.produceItems(building, craftSpeed, (item, ips) -> {
+				itemsBalance[item.id] += ips;
+			});
 			
-			if(block instanceof GenericCrafter) {
-				GenericCrafter crafter = (GenericCrafter) block;
-				if(crafter.outputItems != null) {
-					for (int i = 0; i < crafter.outputItems.length; i++) {
-						ItemStack output = crafter.outputItems[i];
-						float ips = craftSpeed*output.amount*building.timeScale();
-						itemsBalance[output.item.id] += ips;
-					}
-				}
-				if(crafter.outputLiquids != null) {
-					for (int i = 0; i < crafter.outputLiquids.length; i++) {
-						LiquidStack output = crafter.outputLiquids[i];
-						float lps = 60*output.amount*building.timeScale();
-						itemsBalance[output.liquid.id] += lps;
-					}
-				}
-			}
+			ModWork.produceLiquids(building, craftSpeed, (liquid, lps) -> {
+				liquidBalance[liquid.id] += lps;
+			});
 			
 			for (int c = 0; c < block.consumers.length; c++) {
 				Consume consume = block.consumers[c];
-				if(consume instanceof ConsumeItems) {
-					ConsumeItems items = (ConsumeItems) consume;
-					ItemStack[] stacks = items.items;
-					for (int item = 0; item < stacks.length; item++) {
-						ItemStack stack = stacks[item];
-						float ips = craftSpeed*stack.amount*building.timeScale();
-						itemsBalance[stack.item.id] -= ips;
-					}
-					continue;
-				}
-				if(consume instanceof ConsumeLiquid) {
-					ConsumeLiquid liquids = (ConsumeLiquid) consume;
-					liquidBalance[liquids.liquid.id] -= liquids.amount*60f*building.timeScale();
-					continue;
-				}
+				ModWork.consumeItems(consume, building, craftSpeed, (item, ips) -> {
+					itemsBalance[item.id] -= ips;
+				});
+				ModWork.consumeLiquids(consume, building, craftSpeed, (liquid, lps) -> {
+					liquidBalance[liquid.id] -= lps;
+				});
 			}
 		}
 
