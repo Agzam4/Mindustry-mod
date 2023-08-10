@@ -3,7 +3,6 @@ package agzam4;
 import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
-import arc.KeyBinds.Axis;
 import arc.KeyBinds.Section;
 import arc.func.Cons;
 import arc.graphics.Color;
@@ -18,7 +17,6 @@ import arc.scene.ui.Dialog;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
-import arc.util.Http;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
@@ -30,41 +28,25 @@ import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
 import mindustry.ui.Styles;
-import mindustry.ui.dialogs.LanguageDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.meta.BuildVisibility;
 
-import static mindustry.Vars.discordURL;
-import static mindustry.Vars.ui;
-
-import java.awt.AWTException;
-import java.awt.Cursor;
-import java.awt.Image;
-import java.awt.SystemTray;
-import java.awt.Toolkit;
-import java.awt.TrayIcon;
-import java.awt.TrayIcon.MessageType;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
+//import java.awt.AWTException;
+//import java.awt.Image;
+//import java.awt.SystemTray;
+//import java.awt.Toolkit;
+//import java.awt.TrayIcon;
+//import java.awt.TrayIcon.MessageType;
+//import java.awt.image.BufferedImage;
+//import java.util.concurrent.TimeUnit;
 
 import agzam4.ModWork.KeyBinds;
 
 public class AgzamMod extends Mod {
 
 	static boolean hideUnits;
-	private static boolean comfortMega;
-	private static boolean drawUnitsHitboxes;
-	private static boolean dogeMaster;
-	private static Axis hideUnitsHotkey = new Axis(KeyCode.h);
-	private static Axis slowDownKey = new Axis(KeyCode.shiftLeft);
 
 //	private static final String settingCategoryName = Locale.getDefault() == Locale.ENGLISH ? "Mod settings" : "Настройки мода";
 //	private static final String buttonsText[] = Locale.getDefault() == Locale.ENGLISH ? 
@@ -85,12 +67,22 @@ public class AgzamMod extends Mod {
 	
 	int pauseRandomNum = 0;
 	String pingText = "@Agzam 000";
+
+	private boolean afkAvalible;
 	
 	@Override
 	public void init() {
 		CursorTracker.init();
 		IndustryCalculator.init();
-		
+
+		try {
+			try {
+				MyTray.avalible = MyTray.avalible();
+			} catch (Error e) {
+
+			} 
+		} catch (Throwable e) {
+		}
 //		Vars.state.rules.hasEnv(defaultEnv);
 //		Env.any;
 //		try {
@@ -176,9 +168,18 @@ public class AgzamMod extends Mod {
 			addKeyBind(table, KeyBinds.clearSelection);
 			
 			addCategory(table, "afk");
-			table.field(getCustomAfk(), t -> {
-				Core.settings.put("agzam4mod.afk-start", t);
-			}).tooltip(ModWork.bungle("afk.automessage-start-tooltip")).width(Core.scene.getWidth()/2f).row();
+			
+			try {
+				afkAvalible = true;
+				if(MyTray.avalible) {
+					table.field(getCustomAfk(), t -> {
+						Core.settings.put("agzam4mod.afk-start", t);
+					}).tooltip(ModWork.bungle("afk.automessage-start-tooltip")).width(Core.scene.getWidth()/2f).row();
+				}
+			} catch (Throwable e) {
+				afkAvalible = false;
+		        table.add(ModWork.bungle("afk-err")).color(Color.red).colspan(4).pad(10).padBottom(4).row();
+			}
 			
             settingsTable.add(table);
             settingsTable.row();
@@ -189,19 +190,20 @@ public class AgzamMod extends Mod {
 			addCategory(table, "report-bugs");
 			table.button("Github", Icon.github, Styles.defaultt, () -> {
 	            if(!Core.app.openURI("https://github.com/Agzam4")){
-	                ui.showErrorMessage("@linkfail");
+	                Vars.ui.showErrorMessage("@linkfail");
 	                Core.app.setClipboardText("https://github.com/Agzam4");
 	            }
 			}).growX().pad(10).padBottom(4);
 			table.row();
 			table.button("YouTube", Icon.play, Styles.defaultt, () -> {
 	            if(!Core.app.openURI("https://www.youtube.com/@agzam4/")){
-	                ui.showErrorMessage("@linkfail");
+	            	Vars.ui.showErrorMessage("@linkfail");
 	                Core.app.setClipboardText("https://www.youtube.com/@agzam4/");
 	            }
 			}).growX().pad(10).padBottom(4);
 			table.row();
 		};
+//		Blocks.cryofluidMixer;
 //		
 		Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
 
@@ -227,6 +229,8 @@ public class AgzamMod extends Mod {
 		});
 		
 		Events.on(PlayerChatEvent.class, e -> {
+			if(!afkAvalible) return;
+			if(!MyTray.avalible) return;
 			if(!ModWork.setting("afk-ping")) return;
 			if(e.message == null) return;
 			if(!isPaused) return;
@@ -241,18 +245,7 @@ public class AgzamMod extends Mod {
 				if(msg.startsWith(pingText)) {
 					msg = msg.substring(pingText.length());
 					createPingText(stripName);
-					Toolkit.getDefaultToolkit().beep();
-					SystemTray tray = SystemTray.getSystemTray();
-			        Image image = new BufferedImage(5, 5, BufferedImage.TYPE_INT_ARGB);
-			        TrayIcon trayIcon = new TrayIcon(image, "Mindustry");
-			        trayIcon.setImageAutoSize(true);
-			        trayIcon.setToolTip("Mindustry");
-			        try {
-						tray.add(trayIcon);
-					} catch (AWTException e1) {
-						e1.printStackTrace();
-					}
-			        trayIcon.displayMessage(Vars.appName, Strings.stripColors(e.player.name()) + ": " + msg, MessageType.INFO);
+					MyTray.message(Strings.stripColors(e.player.name()) + ": " + msg);
 			        Call.sendChatMessage("[lightgray]" + ModWork.bungle("afk.message-send"));
 					return;
 				}
@@ -264,8 +257,12 @@ public class AgzamMod extends Mod {
 					}
 					String text = "[lightgray]" + getCustomAfk()
 							.replaceAll("@name", Strings.stripColors(stripName))
-							.replaceAll("@time", time + "") + 
-							ModWork.bungle("afk.automessage-end").replaceFirst("@pingText", pingText);
+							.replaceAll("@time", time + "");
+					if(text.indexOf("@pingText") == -1) {
+						text += ModWork.bungle("afk.automessage-end").replaceFirst("@pingText", pingText);
+					} else {
+						text = text.replaceAll("@pingText", pingText);
+					}
 					Call.sendChatMessage(text); 
 					//"[lightgray]Похоже Agzam в АФК уже " + time + ". Напиши [orange]" + pingText + " ваше_сообщение[], чтобы отправить ему сообщение");
 				}
@@ -445,18 +442,6 @@ public class AgzamMod extends Mod {
 //            unitCapModifier = 8;
 //        }
 //		};
-	}
-
-	protected void dogeMaster(boolean b) {
-		dogeMaster = b;		
-		Core.settings.put("agzam4mod-units.settings.dogeMaster", b);
-		Core.settings.saveValues();
-	}
-
-	protected void drawUnitsHitboxes(boolean b) {
-		drawUnitsHitboxes = b;		
-		Core.settings.put("agzam4mod-units.settings.drawUnitsHitboxes", b);
-		Core.settings.saveValues();
 	}
 
 //	private float megaAccel, megaDragg, megaSpeed;

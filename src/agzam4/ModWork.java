@@ -1,6 +1,8 @@
 package agzam4;
 
 import arc.Core;
+import arc.func.Cons;
+import arc.func.Cons2;
 import arc.graphics.Color;
 import arc.input.KeyCode;
 import arc.math.Mathf;
@@ -8,15 +10,25 @@ import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.gen.Building;
+import mindustry.type.Item;
+import mindustry.type.ItemStack;
+import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.world.blocks.production.GenericCrafter;
+import mindustry.world.blocks.production.Pump;
 import mindustry.world.blocks.units.Reconstructor;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild;
+import mindustry.world.consumers.Consume;
+import mindustry.world.consumers.ConsumeItemCharged;
 import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
+import mindustry.world.consumers.ConsumeLiquids;
 import mindustry.world.Block;
 import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
+import mindustry.world.blocks.production.Drill.DrillBuild;
+import mindustry.world.blocks.production.Pump.PumpBuild;
 
 public class ModWork {
 
@@ -175,6 +187,85 @@ public class ModWork {
 			stripName = stripName.replaceAll(enToRu[i][0], enToRu[i][1]);
 		}
 		return stripName.toLowerCase();
+	}
+
+
+	public static void consumeItems(Consume consume, Building building, float craftSpeed, Cons2<Item, Float> cons) {
+		if(consume instanceof ConsumeItems) {
+			ConsumeItems items = (ConsumeItems) consume;
+			ItemStack[] stacks = items.items;
+			for (int item = 0; item < stacks.length; item++) {
+				ItemStack stack = stacks[item];
+				float ips = craftSpeed*stack.amount*building.timeScale();
+				cons.get(stack.item, ips);
+			}
+			return;
+		}
+		if(consume instanceof ConsumeItemDynamic) {
+			ConsumeItemDynamic dynamic = (ConsumeItemDynamic) consume;
+			ItemStack[] stacks = dynamic.items.get(building);
+			if(stacks == null) return;
+			for (int item = 0; item < stacks.length; item++) {
+				ItemStack stack = stacks[item];
+				float ips = craftSpeed*stack.amount*building.timeScale();
+				cons.get(stack.item, ips);
+			}
+			return;
+		}
+	}
+
+	public static void produceItems(Building building, float craftSpeed, Cons2<Item, Float> cons) {
+		if(building instanceof DrillBuild) {
+			DrillBuild drill = (DrillBuild) building;
+			cons.get(drill.dominantItem, drill.lastDrillSpeed*60*drill.timeScale());
+		}
+		if(building.block() instanceof GenericCrafter) {
+			GenericCrafter crafter = (GenericCrafter) building.block();
+			if(crafter.outputItems != null) {
+				for (int i = 0; i < crafter.outputItems.length; i++) {
+					ItemStack output = crafter.outputItems[i];
+					cons.get(output.item, craftSpeed*output.amount*building.timeScale());
+				}
+			}
+		}
+	}
+	
+	public static void consumeLiquids(Consume consume, Building building, float craftSpeed, Cons2<Liquid, Float> cons) {
+		if(consume instanceof ConsumeLiquid) {
+			ConsumeLiquid liquid = (ConsumeLiquid) consume;
+			float lps = craftSpeed*liquid.amount*building.timeScale();
+			cons.get(liquid.liquid, lps);
+			return;
+		}
+		if(consume instanceof ConsumeLiquids) {
+			ConsumeLiquids liquids = (ConsumeLiquids) consume;
+			LiquidStack[] stacks = liquids.liquids;
+			if(stacks == null) return;
+			for (int liquid = 0; liquid < stacks.length; liquid++) {
+				LiquidStack stack = stacks[liquid];
+				float lps = 60f*stack.amount*building.timeScale();
+				cons.get(stack.liquid, lps);
+			}
+			return;
+		}
+	}
+
+	public static void produceLiquids(Building building, float craftSpeed, Cons2<Liquid, Float> con) {
+		if(building instanceof PumpBuild && building.block() instanceof Pump) {
+			PumpBuild pump = (PumpBuild) building;
+			if(pump.liquidDrop != null) {
+				con.get(pump.liquidDrop, pump.amount * ((Pump)building.block()).pumpAmount * 60f * building.timeScale());
+			}
+		}
+		if(building.block() instanceof GenericCrafter) {
+			GenericCrafter crafter = (GenericCrafter) building.block();
+			if(crafter.outputLiquids != null) {
+				for (int i = 0; i < crafter.outputLiquids.length; i++) {
+					LiquidStack output = crafter.outputLiquids[i];
+					con.get(output.liquid, 60*output.amount*building.timeScale());
+				}
+			}
+		}
 	}
 
 }
