@@ -1,0 +1,547 @@
+package agzam4;
+
+import arc.ApplicationListener;
+import arc.Core;
+import arc.Events;
+import arc.KeyBinds.Axis;
+import arc.KeyBinds.Section;
+import arc.func.Cons;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.TextureRegion;
+import arc.input.InputDevice.DeviceType;
+import arc.input.KeyCode;
+import arc.math.Mathf;
+import arc.scene.event.InputEvent;
+import arc.scene.event.InputListener;
+import arc.scene.ui.Dialog;
+import arc.scene.ui.TextButton;
+import arc.scene.ui.layout.Cell;
+import arc.scene.ui.layout.Table;
+import arc.util.Http;
+import arc.util.Strings;
+import arc.util.Time;
+import mindustry.Vars;
+import mindustry.game.EventType.PlayerChatEvent;
+import mindustry.game.EventType.Trigger;
+import mindustry.game.EventType.UnitDamageEvent;
+import mindustry.gen.Call;
+import mindustry.gen.Icon;
+import mindustry.graphics.Pal;
+import mindustry.mod.Mod;
+import mindustry.ui.Styles;
+import mindustry.ui.dialogs.LanguageDialog;
+import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
+import mindustry.world.meta.BuildVisibility;
+
+import static mindustry.Vars.discordURL;
+import static mindustry.Vars.ui;
+
+import java.awt.AWTException;
+import java.awt.Cursor;
+import java.awt.Image;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.TrayIcon.MessageType;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+
+import agzam4.ModWork.KeyBinds;
+
+public class AgzamMod extends Mod {
+
+	static boolean hideUnits;
+	private static boolean comfortMega;
+	private static boolean drawUnitsHitboxes;
+	private static boolean dogeMaster;
+	private static Axis hideUnitsHotkey = new Axis(KeyCode.h);
+	private static Axis slowDownKey = new Axis(KeyCode.shiftLeft);
+
+//	private static final String settingCategoryName = Locale.getDefault() == Locale.ENGLISH ? "Mod settings" : "Настройки мода";
+//	private static final String buttonsText[] = Locale.getDefault() == Locale.ENGLISH ? 
+//			new String[] {"Hide units body", "Hide units key", "No \"ice moving\" on poly, mega, and", "Show hitboxes on hide", "Doge master"}: 
+//			new String[] {"Скрывать корпус юнитов", "Клаиша скрытия юнитов", "Убрать скольжение у меги", "Отоброжать хитбоксы когда скрыты", "Мастер уворота"};
+	
+	private static UnitTextures[] unitTextures;
+//	
+//	private TextureRegion none;
+	private TextureRegion minelaser, minelaserEnd;
+//
+//	private UnitType[] units;
+	
+	private Cell<TextButton> unlockContent = null, unlockBlocks = null;
+
+	private boolean isPaused = false;
+	private long pauseStartTime = System.nanoTime();
+	
+	int pauseRandomNum = 0;
+	String pingText = "@Agzam 000";
+	
+	@Override
+	public void init() {
+		CursorTracker.init();
+		IndustryCalculator.init();
+		
+//		Vars.state.rules.hasEnv(defaultEnv);
+//		Env.any;
+//		try {
+//			Object hotkeyObject = Core.settings.get("agzam4mod-units.settings.hideUnitsHotkey", null);
+//			if(hotkeyObject == null) {
+//				hideUnitsHotkey = new Axis(KeyCode.h);
+//			} else {
+//				if(hotkeyObject instanceof String) {
+//	                KeyCode keyCode = Arrays.stream(KeyCode.values()).filter(k -> k.value.equalsIgnoreCase((String) hotkeyObject)).findFirst().orElse(KeyCode.h);
+//					hideUnitsHotkey = new Axis(keyCode);
+//				} else if(hotkeyObject instanceof Integer) {
+//					hideUnitsHotkey = new Axis(KeyCode.byOrdinal((Integer) hotkeyObject));
+//				} else {
+//					hideUnitsHotkey = new Axis(KeyCode.h);
+//				}
+//			}
+//			hideUnits = Core.settings.getBool("agzam4mod-units.settings.hideUnits", false);
+//			comfortMega = Core.settings.getBool("agzam4mod-units.settings.comfortMega", false);
+//			drawUnitsHitboxes = Core.settings.getBool("agzam4mod-units.settings.drawUnitsHitboxes", true);
+//			dogeMaster = Core.settings.getBool("agzam4mod-units.settings.dogeMaster", false);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		
+//		none = new TextureRegion(Core.atlas.find("agzam4mod-units-none"));
+		
+		minelaser = Core.atlas.find("minelaser");
+		minelaserEnd = Core.atlas.find("minelaser-end");
+		unitTextures = new UnitTextures[Vars.content.units().size];
+		for (int i = 0; i < unitTextures.length; i++) {
+			unitTextures[i] = new UnitTextures(Vars.content.unit(i));
+		}
+		
+		Core.scene.addListener(new InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, KeyCode keyCode) {
+                if (!Vars.state.isMenu() && !Vars.ui.chatfrag.shown() && !Vars.ui.schematics.isShown() && !Vars.ui.database.isShown() &&
+                		!Vars.ui.consolefrag.shown() && !Vars.ui.content.isShown()) {
+                	if (keyCode.equals(KeyBinds.hideUnits.key)) {
+                		hideUnits(!hideUnits);
+                	}
+                }
+
+                return super.keyDown(event, keyCode);
+            }
+        });
+		//		UnitTypes.alpha.baseRegion.
+
+//		Vars.ui.chatfrag;
+		Cons<SettingsTable> builder = settingsTable -> {
+			settingsTable.defaults().left(); // .size(350f, 800f)
+			
+			Table table = new Table();
+			addCategory(table, "unlock");
+            
+			unlockContent = table.button(ModWork.bungle("settings.unlock-content"), Icon.lockOpen, Styles.defaultt, () -> {
+				unlockDatabaseContent();
+				if(unlockContent != null) unlockContent.disabled(true);
+			}).growX().pad(10).padBottom(4);
+			table.row();
+			
+			unlockBlocks = table.button(ModWork.bungle("settings.unlock-blocks"), Icon.lockOpen, Styles.defaultt, () -> {
+				unlockBlocksContent();
+				if(unlockBlocks != null) unlockBlocks.disabled(true);
+			}).growX().pad(10).padBottom(4);
+			table.row();
+
+			addCategory(table, "cursors");
+            addCheck(table, "cursors-tracking");
+
+			addCategory(table, "units-and-buildings");
+            addCheck(table, "show-turrets-range");
+            addCheck(table, "show-build-health");
+            addCheck(table, "show-units-health");
+			addKeyBind(table, KeyBinds.hideUnits);
+			addKeyBind(table, KeyBinds.slowMovement);
+
+			addCategory(table, "calculations");
+			addCheck(table, "show-blocks-tooltip");
+			addCheck(table, "selection-calculations");
+			
+			addKeyBind(table, KeyBinds.selection);
+			addKeyBind(table, KeyBinds.clearSelection);
+			
+			addCategory(table, "afk");
+			table.field(getCustomAfk(), t -> {
+				Core.settings.put("agzam4mod.afk-start", t);
+			}).tooltip(ModWork.bungle("afk.automessage-start-tooltip")).width(Core.scene.getWidth()/2f).row();
+			
+            settingsTable.add(table);
+            settingsTable.row();
+//
+			settingsTable.name = ModWork.bungle("settings.name");
+			settingsTable.visible = true;
+
+			addCategory(table, "report-bugs");
+			table.button("Github", Icon.github, Styles.defaultt, () -> {
+	            if(!Core.app.openURI("https://github.com/Agzam4")){
+	                ui.showErrorMessage("@linkfail");
+	                Core.app.setClipboardText("https://github.com/Agzam4");
+	            }
+			}).growX().pad(10).padBottom(4);
+			table.row();
+			table.button("YouTube", Icon.play, Styles.defaultt, () -> {
+	            if(!Core.app.openURI("https://www.youtube.com/@agzam4/")){
+	                ui.showErrorMessage("@linkfail");
+	                Core.app.setClipboardText("https://www.youtube.com/@agzam4/");
+	            }
+			}).growX().pad(10).padBottom(4);
+			table.row();
+		};
+//		
+		Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
+
+		Events.run(Trigger.update, () -> {
+			IndustryCalculator.update();
+			if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
+				if(Vars.player.unit() != null) {
+					Vars.player.unit().vel.scl(.5f);
+				}
+			}
+		});
+		
+		Events.run(Trigger.drawOver, () -> {
+			CursorTracker.draw();
+			DamageNumbers.draw();
+			FireRange.draw();
+			IndustryCalculator.draw();
+			Draw.color();
+		});
+		
+		Events.on(UnitDamageEvent.class, e -> {
+			DamageNumbers.unitDamageEvent(e);
+		});
+		
+		Events.on(PlayerChatEvent.class, e -> {
+			if(!ModWork.setting("afk-ping")) return;
+			if(e.message == null) return;
+			if(!isPaused) return;
+			if(e.player.plainName().equals(Vars.player.plainName())) return;
+
+			String stripName = ModWork.strip(Vars.player.name).replaceAll(" ", "_");
+			String ruName = ModWork.toRus(stripName);
+			
+			long afk = getAfkTimeInSec();
+			if(afk >= 10) {
+				String msg = Strings.stripColors(e.message).toLowerCase();
+				if(msg.startsWith(pingText)) {
+					msg = msg.substring(pingText.length());
+					createPingText(stripName);
+					Toolkit.getDefaultToolkit().beep();
+					SystemTray tray = SystemTray.getSystemTray();
+			        Image image = new BufferedImage(5, 5, BufferedImage.TYPE_INT_ARGB);
+			        TrayIcon trayIcon = new TrayIcon(image, "Mindustry");
+			        trayIcon.setImageAutoSize(true);
+			        trayIcon.setToolTip("Mindustry");
+			        try {
+						tray.add(trayIcon);
+					} catch (AWTException e1) {
+						e1.printStackTrace();
+					}
+			        trayIcon.displayMessage(Vars.appName, Strings.stripColors(e.player.name()) + ": " + msg, MessageType.INFO);
+			        Call.sendChatMessage("[lightgray]" + ModWork.bungle("afk.message-send"));
+					return;
+				}
+				if(msg.indexOf(ruName) != -1 || msg.indexOf(stripName.toLowerCase()) != -1) {
+					createPingText(stripName);
+					String time = Mathf.floor(afk/60) + " " + ModWork.bungle("afk.min");
+					if(afk < 60) {
+						time = afk + " " + ModWork.bungle("afk.sec");
+					}
+					String text = "[lightgray]" + getCustomAfk()
+							.replaceAll("@name", Strings.stripColors(stripName))
+							.replaceAll("@time", time + "") + 
+							ModWork.bungle("afk.automessage-end").replaceFirst("@pingText", pingText);
+					Call.sendChatMessage(text); 
+					//"[lightgray]Похоже Agzam в АФК уже " + time + ". Напиши [orange]" + pingText + " ваше_сообщение[], чтобы отправить ему сообщение");
+				}
+			}
+		});
+		
+
+		Core.app.addListener(new ApplicationListener() {
+
+			@Override
+			public void pause() {
+				isPaused = true;
+				pauseStartTime = System.nanoTime();
+			}
+			
+			@Override
+			public void resume() {
+				isPaused = false;
+			}
+		});
+		 
+//		Events.run(Trigger.update, () -> {
+//			if(dogeMaster) {
+//				float tx = 0;
+//				float ty = 0;
+//				
+//				if(player.unit() == null) return;
+//
+//				float px = player.x;
+//				float py = player.y;
+//				float dx = player.unit() == null ? 0 : player.unit().deltaX;
+//				float dy = player.unit() == null ? 0 : player.unit().deltaY;
+//				float nx = px + dx;
+//				float ny = py + dy;
+//				
+//				float hitsize = player.unit() == null ? 0 : player.unit().hitSize;
+//				float dangerZoneTime = 10 * tilesize;
+//				
+//				for (int i = 0; i < Groups.bullet.size(); i++) {
+//					Bullet bullet = Groups.bullet.index(i);
+//					if(bullet.team == player.team()) continue;
+//
+//					float bnx = bullet.x;// + bullet.deltaX;
+//					float bny = bullet.y;// + bullet.deltaY;
+//					float dist = Mathf.len(bnx - nx, bny - ny) - hitsize;
+//					float bspeed = bullet.type.speed;
+//					float bangle = Mathf.atan2(bullet.vel.x, bullet.vel.y);
+//					
+//					if(dist < dangerZoneTime) {
+//						float tbangle = Mathf.angle(px - bnx, py - bny); // bullet to player
+//						
+//						if(Math.abs(bangle - tbangle) > 45) continue;
+//						
+//						float k = dangerZoneTime*bspeed/dist;
+//						tx += Mathf.cos(tbangle)*k;
+//						ty += Mathf.sin(tbangle)*k;
+//					}
+////					float x = bullet.x;
+//				}
+//				
+//				float tangle = Mathf.angle(tx, ty);
+//				float tspeed = Mathf.len(tx, ty);
+//				float speed = player.unit().type.speed;
+//				
+//				// tspeed > dangerZoneTime
+//				if(tspeed > 0) {
+////					player.unit().velAddNet(speed*Mathf.cos(tangle), speed*Mathf.sin(tangle));
+////					player.unit().movePref(new Vec2(px + speed*Mathf.cos(tangle), py + speed*Mathf.sin(tangle)));
+//					player.unit().movePref(new Vec2(speed*Mathf.cos(tangle), speed*Mathf.sin(tangle)));
+////					moveTo(player.unit(), new Vec2(px + speed*Mathf.cos(tangle), py + speed*Mathf.sin(tangle)), 0, 1f, fa, null, comfortMega)
+//				}
+//			}
+//		});
+//		
+//		super.init();
+//		
+//		Drawf.dashCircle(0, 0, 80, Color.white);
+//		
+//		Groups.player.each(e -> Call.effect(Fx.reactorExplosion, e.mouseX, e.mouseY, 10, Color.white));
+		
+	}
+	
+	private String getCustomAfk() {
+		String def = ModWork.bungle("afk.automessage");
+		String str = Core.settings.getString("agzam4mod.afk-start", def);
+		if(str.isEmpty()) return def;
+		return str;
+	}
+
+	private void addKeyBind(Table table, final KeyBinds keybind) {
+        Table hotkeyTable = new Table();
+        hotkeyTable.add().height(10);
+        hotkeyTable.row();
+        hotkeyTable.add(ModWork.bungle("settings.keybinds." + keybind.keybind), Color.white).left().padRight(40).padLeft(8);
+        hotkeyTable.label(() -> keybind.key.toString()).color(Pal.accent).left().minWidth(90).padRight(20);
+        hotkeyTable.button("@settings.rebind", Styles.defaultt, () -> {
+        	openDialog(keybind);
+        }).width(130f);
+        hotkeyTable.button("@settings.resetKey", Styles.defaultt, () -> {
+        	keybind.key = keybind.def;
+        	keybind.put();
+        }).width(130f).pad(2f).padLeft(4f);
+        hotkeyTable.row();
+        table.add(hotkeyTable);
+        table.row();		
+	}
+
+	private void addCategory(Table table, String category) {
+        table.add(ModWork.bungle("category." + category)).color(Pal.accent).colspan(4).pad(10).padBottom(4).row();
+		table.image().color(Pal.accent).fillX().height(3).pad(6).colspan(4).padTop(0).padBottom(10).row();		
+	}
+
+	private void addCheck(Table table, String settings) {
+		table.check(ModWork.bungle("settings." + settings), ModWork.setting(settings), b -> {
+			ModWork.setting(settings, b);
+		}).colspan(4).pad(10).padBottom(4).tooltip(ModWork.bungle("settings-tooltip." + settings)).row();;
+	}
+	
+	private void createPingText(String stripName) {
+		pingText = ("@" + stripName + " " + Mathf.random(100, 999)).toLowerCase();
+	}
+
+	private long getAfkTimeInSec() {
+		long afk = System.nanoTime()-pauseStartTime;
+		return TimeUnit.NANOSECONDS.toSeconds(afk);
+	}
+
+	private void unlockDatabaseContent() {
+		Vars.content.units().each(u -> u.hidden = false);
+		Vars.content.items().each(i -> i.hidden = false);
+		Vars.content.liquids().each(l -> l.hidden = false);		
+	}
+	
+	private void unlockBlocksContent() {
+		Vars.content.blocks().each(b -> {
+			b.buildVisibility = BuildVisibility.shown;
+//			b.destructible = true;
+//			b.alwaysReplace = true;
+//			b.replaceable = true;
+//	        b.breakable = true;
+//	        b.floating = true;
+//			b.group = BlockGroup.walls;
+//	        b.instantDeconstruct = true;
+		});
+		
+		
+//		CoreBlock.class.
+//		Classpu
+//		Vars.world.build(0).getClass().getMethods()
+//		Vars.player.unit().hasEffect(null)
+//		Payloadc c = (Payloadc) Vars.player.unit();
+//		c.dropLastPayload()
+//		new UnitPayload(UnitTypes.crawler.create(Team.derelict));
+//		Blocks.
+//		c.payloads(
+//		PayloadSource
+//		c.addPayload(new BuildPayload(Blocks.coreShard, Team.sharded));
+//		Vars.player.unit().addPayload(new BuildPayload(Blocks.coreShard, Team.sharded));
+//		Vars.player.unit().addPayload(new UnitPayload(UnitTypes.navanax.create(Team.green)));
+//		Events.fire(new WorldLoadEndEvent(null, null));
+//		Events.fire(new EventType.PickupEvent(Vars.player.unit(), Vars.world.build(0, 0)));
+//		Blocks.coreShard =  new CoreBlock("core-shard"){
+//			@Override
+//			public boolean canPlaceOn(Tile tile, Team team, int rotation) {
+//				return super.canPlaceOn(tile, team, rotation);
+//			}
+//			{
+//            requirements(Category.effect, BuildVisibility.editorOnly, with(Items.copper, 1000, Items.lead, 800));
+//            alwaysUnlocked = true;
+//
+//            isFirstTier = true;
+//            unitType = UnitTypes.alpha;
+//            health = 1100;
+//            itemCapacity = 4000;
+//            size = 3;
+//
+//            unitCapModifier = 8;
+//        }
+//		};
+	}
+
+	protected void dogeMaster(boolean b) {
+		dogeMaster = b;		
+		Core.settings.put("agzam4mod-units.settings.dogeMaster", b);
+		Core.settings.saveValues();
+	}
+
+	protected void drawUnitsHitboxes(boolean b) {
+		drawUnitsHitboxes = b;		
+		Core.settings.put("agzam4mod-units.settings.drawUnitsHitboxes", b);
+		Core.settings.saveValues();
+	}
+
+//	private float megaAccel, megaDragg, megaSpeed;
+
+//	private void comfortMega(boolean b) {
+//		comfortMega = b;
+//		Core.settings.put("agzam4mod-units.settings.comfortMega", b);
+//		Core.settings.saveValues();
+//		if(comfortMega) {
+//			mega.accel = emanate.accel;
+//			mega.drag = emanate.drag;
+////			mega.speed = 3;
+//		} else {
+//			mega.accel = megaAccel;
+//			mega.drag = megaDragg;
+////			mega.speed = megaSpeed;
+//		}
+//	}
+	
+	private void hideUnits(boolean b) {
+		hideUnits = b;
+		if(b) {
+			for (int i = 0; i < unitTextures.length; i++) {
+				unitTextures[i].hideTextures();
+				unitTextures[i].hideEngines();
+			}
+			Core.atlas.addRegion("minelaser", UnitTextures.none);
+			Core.atlas.addRegion("minelaser-end", UnitTextures.none);
+		} else {
+			for (int i = 0; i < unitTextures.length; i++) {
+				unitTextures[i].returnTextures();
+				unitTextures[i].returnEngines();
+			}
+			Core.atlas.addRegion("minelaser", minelaser);
+			Core.atlas.addRegion("minelaser-end", minelaserEnd);
+		}
+	}
+
+	Section section = Core.keybinds.getSections()[0];
+    
+	private void openDialog(final KeyBinds keybind) {
+		Dialog keybindDialog = new Dialog(Core.bundle.get("keybind.press"));
+
+		keybindDialog.titleTable.getCells().first().pad(4);
+			
+        if(section.device.type() == DeviceType.keyboard){
+
+        	keybindDialog.addListener(new InputListener(){
+                @Override
+                public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+                    if(Core.app.isAndroid()) return false;
+                    rebind(keybindDialog, keybind, button);
+                    return false;
+                }
+
+                @Override
+                public boolean keyDown(InputEvent event, KeyCode button){
+                	keybindDialog.hide();
+                    if(button == KeyCode.escape) return false;
+                    rebind(keybindDialog, keybind, button);
+                    return false;
+                }
+
+                @Override
+                public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY){
+                    keybindDialog.hide();
+                    rebind(keybindDialog, keybind, KeyCode.scroll);
+                    return false;
+                }
+            });
+        }
+
+        keybindDialog.show();
+        Time.runTask(1f, () -> keybindDialog.getScene().setScrollFocus(keybindDialog));
+    }
+	
+	void rebind(Dialog rebindDialog, KeyBinds keyBinds, KeyCode newKey){
+        rebindDialog.hide();
+        keyBinds.key = newKey;
+        keyBinds.put();
+    }
+	
+	static TextureRegion sprite(String name) {
+		return new TextureRegion(Core.atlas.find("agzam4mod-" + name));
+	}
+	//  Core.settings.put("agzam4mod-units.settings.hideUnitsHotkey", new java.lang.Integer(75))
+	// Core.settings.getInt("agzam4mod-units.settings.hideUnitsHotkey", KeyCode.h.ordinal())
+}
