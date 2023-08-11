@@ -58,7 +58,6 @@ public class DamageNumbers {
 		
 		for (int i = 0; i < damages.size; i++) {
 			if(damages.get(i).lastUpdate != updates) {
-				Log.info("cursor removed");
 				damages.remove(i);
 				break;
 			}
@@ -184,11 +183,11 @@ public class DamageNumbers {
 				if(index >= gradient) index = gradient-1;
 				
 				if(unit.shield > 0) {
-					MyDraw.textColor(" " + StatusEffects.shielded.emoji() + round(unit.shield), 
+					MyDraw.textColor(" " + StatusEffects.shielded.emoji() + roundSimple(unit.shield), 
 							unit.getX(), unit.getY()+unit.hitSize/2,
 							1f, .9f, .5f, hScale, Align.left);
 				} else {
-					MyDraw.textColor(" " + round(unit.health), 
+					MyDraw.textColor(" " + roundSimple(unit.health), 
 							unit.getX(), unit.getY()+unit.hitSize/2,
 							rs[index], gs[index], bs[index], hScale, Align.left);
 				}
@@ -200,7 +199,7 @@ public class DamageNumbers {
 							hScale, Align.right);
 				} else {
 					boolean a = dps > 0;
-					MyDraw.textColor((a ? "" : "+") + round(Math.abs(dps)) + " ", 
+					MyDraw.textColor((a ? "" : "+") + roundSimple(Math.abs(dps)) + " ", 
 							unit.getX(), unit.getY()+unit.hitSize/2f,
 							a ? 1f : .2f,
 							a ? .2f : .8f,		

@@ -3,6 +3,7 @@ package agzam4;
 import static agzam4.ModWork.bs;
 import static agzam4.ModWork.gs;
 import static agzam4.ModWork.rs;
+import static mindustry.Vars.control;
 
 import agzam4.ModWork.KeyBinds;
 import arc.Core;
@@ -23,27 +24,30 @@ import arc.util.Nullable;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
 import mindustry.core.World;
+import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
 import mindustry.game.EventType.WorldLoadEndEvent;
+import mindustry.game.Schematic;
 import mindustry.gen.Building;
+import mindustry.gen.Iconc;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Pal;
+import mindustry.mod.Mod;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
-import mindustry.type.LiquidStack;
 import mindustry.ui.Fonts;
+import mindustry.ui.fragments.HudFragment;
 import mindustry.world.Block;
+import mindustry.world.Build;
 import mindustry.world.Tile;
 import mindustry.world.blocks.production.Drill;
-import mindustry.world.blocks.production.Drill.DrillBuild;
 import mindustry.world.blocks.production.GenericCrafter;
 import mindustry.world.blocks.production.Pump;
-import mindustry.world.blocks.production.Pump.PumpBuild;
 import mindustry.world.blocks.production.SolidPump;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild;
 import mindustry.world.consumers.Consume;
-import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
 
@@ -120,6 +124,8 @@ public class IndustryCalculator {
 					rs[index], gs[index], bs[index], 1, Align.center);
 		}
 		
+//		BuildPlan plan = Vars.player.unit().buildPlan();
+		
 		if(building.team == Vars.player.team() && ModWork.setting("show-blocks-tooltip")) {
 			Block block = building.block();
 			float craftSpeed = ModWork.getCraftSpeed(building);
@@ -128,37 +134,48 @@ public class IndustryCalculator {
 
 //			MyDraw.textColor("craftSpeed: " + craftSpeed, mouseX, mouseY+30, 0, 0, 1f, 1, Align.center);
 			if(craftSpeed <= 0) return;
+
 			if(block.consumers != null) {
-				if(building instanceof UnitFactoryBuild && block instanceof UnitFactory) {
-					int plan = ((UnitFactoryBuild)building).currentPlan;
-					if(plan != -1) {
-						ItemStack[] requirements = ((UnitFactory)block).plans.get(plan).requirements;
-						for (int i = 0; i < requirements.length; i++) {
-							ItemStack stack = requirements[i];
-							float ips = craftSpeed*stack.amount;
-							addItemInfo(info, block, stack.item, ips);
-						}
-					}
-				}
-				for (int c = 0; c < block.consumers.length; c++) {
-					Consume consume = block.consumers[c];
-					if(consume instanceof ConsumeItems) {
-						ConsumeItems items = (ConsumeItems) consume;
-						ItemStack[] stacks = items.items;
-						for (int i = 0; i < stacks.length; i++) {
-							ItemStack stack = stacks[i];
-							float ips = craftSpeed*stack.amount;
-							addItemInfo(info, block, stack.item, ips);
-						}
-						continue;
-					}
-					if(consume instanceof ConsumeLiquid) {
-						ConsumeLiquid liquid = (ConsumeLiquid) consume;
-						addLiquidInfo(info, block, liquid.liquid, 60*liquid.amount);
-						continue;
-					}
+				for (int i = 0; i < block.consumers.length; i++) {
+					ModWork.consumeItems(block.consumers[i], building, craftSpeed, (item, ips) -> {
+						addItemInfo(info, block, item, ips, false);
+					});
+					ModWork.consumeLiquids(block.consumers[i], building, craftSpeed, (liquid, ips) -> {
+						addLiquidInfo(info, block, liquid, ips, false);
+					});
 				}
 			}
+//			if(block.consumers != null) {
+//				if(building instanceof UnitFactoryBuild && block instanceof UnitFactory) {
+//					int plan = ((UnitFactoryBuild)building).currentPlan;
+//					if(plan != -1) {
+//						ItemStack[] requirements = ((UnitFactory)block).plans.get(plan).requirements;
+//						for (int i = 0; i < requirements.length; i++) {
+//							ItemStack stack = requirements[i];
+//							float ips = craftSpeed*stack.amount;
+//							addItemInfo(info, block, stack.item, ips, false);
+//						}
+//					}
+//				}
+//				for (int c = 0; c < block.consumers.length; c++) {
+//					Consume consume = block.consumers[c];
+//					if(consume instanceof ConsumeItems) {
+//						ConsumeItems items = (ConsumeItems) consume;
+//						ItemStack[] stacks = items.items;
+//						for (int i = 0; i < stacks.length; i++) {
+//							ItemStack stack = stacks[i];
+//							float ips = craftSpeed*stack.amount;
+//							addItemInfo(info, block, stack.item, ips, false);
+//						}
+//						continue;
+//					}
+//					if(consume instanceof ConsumeLiquid) {
+//						ConsumeLiquid liquid = (ConsumeLiquid) consume;
+//						addLiquidInfo(info, block, liquid.liquid, 60*liquid.amount, false);
+//						continue;
+//					}
+//				}
+//			}
 			MyDraw.drawTooltip(info.toString(), mouseX, mouseY);
 		}
 	}
@@ -315,15 +332,105 @@ public class IndustryCalculator {
 
 	private static float itemsBalance[] = new float[Vars.content.items().size];
 	private static float liquidBalance[] = new float[Vars.content.liquids().size];
+
+	private static float itemsBalanceTotal[] = new float[Vars.content.items().size];
+	private static float liquidBalanceTotal[] = new float[Vars.content.liquids().size];
+	private static boolean itemsWarn[] = new boolean[Vars.content.items().size];
 	
+	private static float itemsBalanceFixed[] = new float[Vars.content.items().size];
+	private static float liquidBalanceFixed[] = new float[Vars.content.liquids().size];
+
+	
+	static int updates = 0;
 	private static void calcBalance() {
 		StringBuilder info = new StringBuilder();
 		
+		
 		for (int i = 0; i < itemsBalance.length; i++) {
 			itemsBalance[i] = 0;
+			itemsWarn[i] = false;
 		}
 		for (int i = 0; i < liquidBalance.length; i++) {
 			liquidBalance[i] = 0;
+		}
+		
+		if(selected.size == 0) {
+			for (int i = 0; i < itemsBalance.length; i++) {
+				itemsBalanceFixed[i] = itemsBalanceTotal[i] = 0;
+			}
+			for (int i = 0; i < liquidBalance.length; i++) {
+				liquidBalanceFixed[i] = liquidBalanceTotal[i] = 0;
+			}
+			updates = 0;
+		}
+
+		boolean buildPlans = false;
+		if(ModWork.setting("buildplans-calculations")) {
+			if(Vars.player.unit() != null) {
+				if(Vars.player.unit().plans != null) {
+					if(Vars.player.unit().plans().size > 0) {
+						for (int i = 0; i < Vars.player.unit().plans().size; i++) {
+							BuildPlan buildPlan = Vars.player.unit().plans().get(i);
+							if(buildPlan.breaking) continue;
+							float craftSpeed = ModWork.getCraftSpeed(buildPlan.block,
+									buildPlan.x, buildPlan.y, buildPlan.config);
+							ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+									buildPlan.config, craftSpeed, 
+									(item, ips) -> itemsBalance[item.id] -= ips,
+									(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+							ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+									buildPlan.config, craftSpeed, 
+									(item, ips) -> itemsBalance[item.id] += ips,
+									(liquid, lps) -> liquidBalance[liquid.id] += lps);
+						}
+						
+						buildPlans = true;
+					}
+				}
+			}
+			if(Vars.control.input.selectPlans.size > 0) {
+				for (int i = 0; i < Vars.control.input.selectPlans.size; i++) {
+					BuildPlan buildPlan = Vars.control.input.selectPlans.get(i);
+					if(buildPlan.breaking) continue;
+					float craftSpeed = ModWork.getCraftSpeed(buildPlan.block,
+							buildPlan.x, buildPlan.y, buildPlan.config);
+					ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+							buildPlan.config, craftSpeed, 
+							(item, ips) -> itemsBalance[item.id] -= ips,
+							(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+					ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+							buildPlan.config, craftSpeed, 
+							(item, ips) -> itemsBalance[item.id] += ips,
+							(liquid, lps) -> liquidBalance[liquid.id] += lps);
+				}
+				buildPlans = true;
+			}
+			if(Vars.control.input.linePlans.size > 0) {
+				for (int i = 0; i < Vars.control.input.linePlans.size; i++) {
+					BuildPlan buildPlan = Vars.control.input.linePlans.get(i);
+					if(buildPlan.breaking) continue;
+					float craftSpeed = ModWork.getCraftSpeed(buildPlan.block,
+							buildPlan.x, buildPlan.y, buildPlan.config);
+					ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+							buildPlan.config, craftSpeed, 
+							(item, ips) -> itemsBalance[item.id] -= ips,
+							(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+					ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
+							buildPlan.config, craftSpeed, 
+							(item, ips) -> itemsBalance[item.id] += ips,
+							(liquid, lps) -> liquidBalance[liquid.id] += lps);
+				}
+				buildPlans = true;
+			}
+		}
+		
+		if(selected.size > 0) {
+			info.append("\n[accent]Selected");
+			if(buildPlans) {
+				info.append("& build plans");
+			}
+		} else if(buildPlans) {
+			info.append("\n[accent]Build plans");
 		}
 		
 		for (int s = 0; s < selected.size; s++) {
@@ -348,6 +455,11 @@ public class IndustryCalculator {
 
 			ModWork.produceItems(building, craftSpeed, (item, ips) -> {
 				itemsBalance[item.id] += ips;
+				if(building.items != null) {
+					if(building.items.get(item) >= building.getMaximumAccepted(item)) {
+						itemsWarn[item.id] = true;
+					}
+				}
 			});
 			
 			ModWork.produceLiquids(building, craftSpeed, (liquid, lps) -> {
@@ -366,29 +478,62 @@ public class IndustryCalculator {
 		}
 
 		for (int i = 0; i < itemsBalance.length; i++) {
+			itemsBalanceTotal[i] += itemsBalance[i];
+		}
+		for (int i = 0; i < liquidBalance.length; i++) {
+			liquidBalanceTotal[i] += liquidBalance[i];
+		}
+
+		if(updates%60 == 0 && updates > 0) {
+			for (int i = 0; i < itemsBalance.length; i++) {
+				itemsBalanceFixed[i] = itemsBalanceTotal[i]/60f;
+				itemsBalanceTotal[i] = 0;//itemsBalance[i];
+			}
+			for (int i = 0; i < liquidBalance.length; i++) {
+				liquidBalanceFixed[i] = liquidBalanceTotal[i]/60f;
+				liquidBalanceTotal[i] = 0;//liquidBalance[i];
+			}
+		} else {
+		}
+
+		for (int i = 0; i < itemsBalance.length; i++) {
 			Item item = Vars.content.item(i);
-			float ips = itemsBalance[i];
-			if(ips == 0) continue;
+			float ips = itemsBalanceFixed[i];
+			if(updates < 60) ips = itemsBalance[i];
+//			boolean warn = needWarn(itemsBalance[i], ips);
+			if(ips == 0) {
+				if(itemsWarn[i]) info.append("[accent]0/sec" + " [yellow]" + Iconc.warning);
+				continue;
+			}
 			if(ips < 0) {
-				addItemInfo(info, null, item, ips);
+				addItemInfo(info, null, item, ips, itemsWarn[i]);
 			} else {
 				info.append("\n[white]" + item.emoji() + " [green]+" + ModWork.round(ips) + "/sec");
+				if(itemsWarn[i]) info.append(" [yellow]" + Iconc.warning);
 			}
 //			info.append(item.emoji() + "[lightgray] " + ModWork.round(ips) + "/sec");
 		}
 		
 		for (int i = 0; i < liquidBalance.length; i++) {
 			Liquid liquid = Vars.content.liquid(i);
-			float lps = liquidBalance[i];
+			float lps = liquidBalanceFixed[i];
+			if(updates < 60) lps = liquidBalance[i];
+//			boolean warn = needWarn(liquidBalance[i], lps);
 			if(lps == 0) continue;
 			if(lps < 0) {
-				addLiquidInfo(info, null, liquid, lps);
+				addLiquidInfo(info, null, liquid, lps, false);
 			} else {
 				info.append("\n[white]" + liquid.emoji() + " [green]+" + ModWork.round(lps) + "/sec");
+//				if(warn) info.append(" [yellow]" + Iconc.warning);
 			}
 		}
+		updates++;
 		
 		balanceFragment.setText(info.toString());
+	}
+	
+	private static boolean needWarn(float a, float b) {
+		return Mathf.round(a/10) != Mathf.round(b);
 	}
 //	static int tileX(float cursorX){
 //        Vec2 vec = Core.input.mouseWorld(cursorX, 0);
@@ -406,24 +551,26 @@ public class IndustryCalculator {
 //        return World.toTile(vec.y);
 //    }
     
-	private static void addItemInfo(StringBuilder info, @Nullable Block block, Item item, float ips) {
+	private static void addItemInfo(StringBuilder info, @Nullable Block block, Item item, float ips, boolean warn) {
 		if(ips < 0) {
 			info.append("\n[white]" + item.emoji() + " [scarlet]" + ModWork.round(ips) + "/sec");
 			ips = -ips;
 		} else {
 			info.append("\n[white]" + item.emoji() + " [lightgray]" + ModWork.round(ips) + "/sec");
 		}
+		if(warn) info.append(" [yellow]" + Iconc.warning);
 		addDrills(info, block, item, ips);
 		addCrafters(info, block, item, ips);
 	}
 	
-	private static void addLiquidInfo(StringBuilder info, @Nullable Block block, Liquid liquid, float lps) {
+	private static void addLiquidInfo(StringBuilder info, @Nullable Block block, Liquid liquid, float lps, boolean warn) {
 		if(lps < 0) {
 			info.append("\n[white]" + liquid.emoji() + " [scarlet]" + ModWork.round(lps) + "/sec");
 			lps = -lps;
 		} else {
 			info.append("\n[white]" + liquid.emoji() + " [lightgray]" + ModWork.round(lps) + "/sec");
 		}
+		if(warn) info.append(warn);
 		addPumps(info, block, liquid, lps);
 		addLiquidCrafters(info, block, liquid, lps);
 	}
@@ -520,8 +667,8 @@ public class IndustryCalculator {
 			if(!drill.environmentBuildable()) continue;
 			if(!drill.isPlaceable()) continue;
 			if(item.hardness > drill.tier) continue;
-			boolean liquid = drillSpeed(drill, item, false) >= .75f;
-			float count = ips/drillSpeed(drill, item, liquid);
+			boolean liquid = ModWork.needDrillWaterBoost(drill, item);
+			float count = ips/ModWork.drillSpeed(drill, item, liquid);
 			builder.append("\n[lightgray]> [white]" + drill.emoji() + (liquid ? " [sky]" : " [white]") + "x" + ModWork.round(count));
 			if(block != null) builder.append("[lightgray] or [white]" + block.emoji() + " x" + ModWork.round(1/count));	
 		}
@@ -594,15 +741,6 @@ public class IndustryCalculator {
 			if(block != null)
 			builder.append("[lightgray] or [white]" + block.emoji() + " x" + ModWork.round(1/count));	
 		}
-	}
-	
-	private static float drillSpeed(Drill drill, Item item, boolean liquid) {
-		float waterBoost = 1;
-		if(liquid) {
-			waterBoost = drill.liquidBoostIntensity*drill.liquidBoostIntensity;
-		}
-		int area = drill.size*drill.size;
-		return 60f*area*waterBoost/drill.getDrillTime(item);
 	}
 	
 	

@@ -1,14 +1,17 @@
 package agzam4;
 
 import arc.Core;
-import arc.func.Cons;
+import arc.Events;
 import arc.func.Cons2;
 import arc.graphics.Color;
 import arc.input.KeyCode;
 import arc.math.Mathf;
+import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.Vars;
+import mindustry.core.UI;
+import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
@@ -20,15 +23,20 @@ import mindustry.world.blocks.units.Reconstructor;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild;
 import mindustry.world.consumers.Consume;
-import mindustry.world.consumers.ConsumeItemCharged;
 import mindustry.world.consumers.ConsumeItemDynamic;
+import mindustry.world.consumers.ConsumeItemFilter;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.consumers.ConsumeLiquids;
 import mindustry.world.Block;
+import mindustry.world.Tile;
+import mindustry.world.blocks.power.ConsumeGenerator;
+import mindustry.world.blocks.production.AttributeCrafter;
 import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
+import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.Drill.DrillBuild;
 import mindustry.world.blocks.production.Pump.PumpBuild;
+import mindustry.world.blocks.production.Separator;
 
 public class ModWork {
 
@@ -45,6 +53,13 @@ public class ModWork {
 			gs[i] = c.g;
 			bs[i] = c.b;
 		}
+	}
+	
+	public static int[][] lastItems = null;
+	public static void init() {
+		Events.on(WorldLoadEndEvent.class, e -> {
+			lastItems = new int[Vars.world.width()][Vars.world.height()];
+		});
 	}
 	
 	public enum KeyBinds {
@@ -80,9 +95,15 @@ public class ModWork {
 		if(index >= gradient) return gradient-1;
 		return index;
 	}
+
+	public static String roundSimple(final float d) {
+		if(Mathf.round(d)*100 == Mathf.round(d*100)) return "" + ((int)d);
+		return "" + Mathf.round(d*100)/100f;
+	}
 	
 	public static String round(final float d) {
-		if(Mathf.round(d) == d) return "" + (int)d;
+		if(d >= 1000 || d <= -1000) return UI.formatAmount((long) d);
+		if(Mathf.round(d)*100 == Mathf.round(d*100)) return "" + ((int)d);
 		return "" + Mathf.round(d*100)/100f;
 	}
 	
@@ -102,7 +123,8 @@ public class ModWork {
 		for (int i = 0; i < block.consumers.length; i++) {
 			if(block.consumers[i] instanceof ConsumeItems
 					|| block.consumers[i] instanceof ConsumeLiquid
-					|| block.consumers[i] instanceof ConsumeItemDynamic) {
+					|| block.consumers[i] instanceof ConsumeItemDynamic
+					|| block.consumers[i] instanceof ConsumeItemFilter) {
 				hasConsumer = true;
 				break;
 			}
@@ -122,6 +144,48 @@ public class ModWork {
 		}
 		if(block instanceof Reconstructor) {
 			craftSpeed = 60f/((Reconstructor)block).constructTime;
+		}
+		if(block instanceof ConsumeGenerator) {
+			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
+		}
+		return craftSpeed;
+	}
+
+
+	public static float getCraftSpeed(Block block, int x, int y, Object config) {
+		if(block.consumers.length == 0) return 0;
+		boolean hasConsumer = false;
+		for (int i = 0; i < block.consumers.length; i++) {
+			if(block.consumers[i] instanceof ConsumeItems
+					|| block.consumers[i] instanceof ConsumeLiquid
+					|| block.consumers[i] instanceof ConsumeItemDynamic
+					|| block.consumers[i] instanceof ConsumeItemFilter) {
+				hasConsumer = true;
+				break;
+			}
+		}
+		if(!hasConsumer) return 0;
+		float craftSpeed = 1f;
+		if(block instanceof GenericCrafter) {
+			craftSpeed = 60f / ((GenericCrafter) block).craftTime;
+		}
+		if(block instanceof AttributeCrafter) {
+			AttributeCrafter attribute = (AttributeCrafter) block;
+			float efficiencyMultiplier = attribute.baseEfficiency 
+					+ Math.min(attribute.maxBoost,
+					attribute.boostScale * block.sumAttribute(attribute.attribute, x, y));
+			craftSpeed *= efficiencyMultiplier;
+		}
+		if(block instanceof UnitFactory && block instanceof UnitFactory && config instanceof Integer) {
+			int plan = (Integer)config;
+			if(plan == -1) return 0;
+			craftSpeed = 60f/((UnitFactory)block).plans.get(plan).time;
+		}
+		if(block instanceof Reconstructor) {
+			craftSpeed = 60f/((Reconstructor)block).constructTime;
+		}
+		if(block instanceof ConsumeGenerator) {
+			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
 		}
 		return craftSpeed;
 	}
@@ -212,6 +276,23 @@ public class ModWork {
 			}
 			return;
 		}
+		if(consume instanceof ConsumeItemFilter) {
+			ConsumeItemFilter filter = (ConsumeItemFilter) consume;
+			Item consumed = filter.getConsumed(building);
+			if(consumed == null) {
+				if(lastItems == null) return;
+				int id = lastItems[building.tileX()][building.tileY()];
+				if(id < 1) return;
+				consumed = Vars.content.item(id-1);
+				if(consumed == null) return;
+			}
+			float ips = craftSpeed*building.timeScale();
+			cons.get(consumed, ips);
+			if(lastItems != null) {
+				lastItems[building.tileX()][building.tileY()] = 1+consumed.id;
+			}
+			return;
+		}
 	}
 
 	public static void produceItems(Building building, float craftSpeed, Cons2<Item, Float> cons) {
@@ -228,12 +309,21 @@ public class ModWork {
 				}
 			}
 		}
+		if(building.block() instanceof Separator) {
+			Separator separator = (Separator) building.block();
+			if(separator.results != null) {
+				for (int i = 0; i < separator.results.length; i++) {
+					ItemStack output = separator.results[i];
+					cons.get(output.item, craftSpeed*output.amount*building.timeScale());
+				}
+			}
+		}
 	}
 	
 	public static void consumeLiquids(Consume consume, Building building, float craftSpeed, Cons2<Liquid, Float> cons) {
 		if(consume instanceof ConsumeLiquid) {
 			ConsumeLiquid liquid = (ConsumeLiquid) consume;
-			float lps = craftSpeed*liquid.amount*building.timeScale();
+			float lps = 60f*craftSpeed*liquid.amount*building.timeScale();
 			cons.get(liquid.liquid, lps);
 			return;
 		}
@@ -267,5 +357,161 @@ public class ModWork {
 			}
 		}
 	}
+	
+	public static void produceBlock(Block block, int x, int y, Object config, float craftSpeed,
+			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons) {
 
+		if(block instanceof Drill) {
+			Drill drill = (Drill) block;
+			ItemStack stack = countOre(drill, Vars.world.tile(x, y));
+			if(stack != null) {
+				float speed = drillSpeed(drill, stack.item, needDrillWaterBoost(drill, stack.item));
+				speed /= (drill.size*drill.size);
+				itemCons.get(stack.item, (float) stack.amount*speed);
+			}
+		}
+		if(block instanceof GenericCrafter) {
+			GenericCrafter crafter = (GenericCrafter) block;
+			if(crafter.outputItems != null) {
+				for (int i = 0; i < crafter.outputItems.length; i++) {
+					ItemStack output = crafter.outputItems[i];
+					itemCons.get(output.item, craftSpeed*output.amount);
+				}
+			}
+			if(crafter.outputLiquids != null) {
+				for (int i = 0; i < crafter.outputLiquids.length; i++) {
+					LiquidStack output = crafter.outputLiquids[i];
+					liquidCons.get(output.liquid, 60*output.amount);
+				}
+			}
+		}
+		if(block instanceof Separator) {
+			Separator separator = (Separator) block;
+			if(separator.results != null) {
+				for (int i = 0; i < separator.results.length; i++) {
+					ItemStack output = separator.results[i];
+					itemCons.get(output.item, craftSpeed*output.amount);
+				}
+			}
+		}
+		if(block instanceof Pump) {
+			Pump pump = (Pump) block;
+			LiquidStack liquidStack = countLiquid(pump, Vars.world.tile(x, y));
+			if(liquidStack != null) {
+				liquidCons.get(liquidStack.liquid, liquidStack.amount * pump.pumpAmount * 60f);
+			}
+		}
+	}
+	
+
+	protected static LiquidStack countLiquid(Pump pump, Tile tile){
+        final Seq<Tile> tempTiles = new Seq<>();
+        
+        float amount = 0f;
+		Liquid liquidDrop = null;
+
+		for(Tile other : tile.getLinkedTiles(tempTiles)){
+	     	if(other != null && other.floor().liquidDrop != null) {
+				liquidDrop = other.floor().liquidDrop;
+				amount += other.floor().liquidMultiplier;
+	     	}
+		}
+		if(liquidDrop == null) return null;
+		return new LiquidStack(liquidDrop, amount);
+	}
+	
+	protected static ItemStack countOre(Drill drill, Tile tile){
+	    final ObjectIntMap<Item> oreCount = new ObjectIntMap<>();
+	    final Seq<Item> itemArray = new Seq<>();
+        final Seq<Tile> tempTiles = new Seq<>();
+	    
+        for(Tile other : tile.getLinkedTilesAs(drill, tempTiles)){
+            if(drill.canMine(other)){
+                oreCount.increment(drill.getDrop(other), 0, 1);
+            }
+        }
+
+        for(Item item : oreCount.keys()){
+            itemArray.add(item);
+        }
+
+        itemArray.sort((item1, item2) -> {
+            int type = Boolean.compare(!item1.lowPriority, !item2.lowPriority);
+            if(type != 0) return type;
+            int amounts = Integer.compare(oreCount.get(item1, 0), oreCount.get(item2, 0));
+            if(amounts != 0) return amounts;
+            return Integer.compare(item1.id, item2.id);
+        });
+
+        if(itemArray.size == 0){
+            return null;
+        }
+
+        return new ItemStack(itemArray.peek(), oreCount.get(itemArray.peek(), 0));
+    }
+
+	public static void consumeBlock(Block block, int x, int y, Object config, float craftSpeed,
+			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons) {
+
+		if(block.consumers != null) {
+			for (int c = 0; c < block.consumers.length; c++) {
+				Consume consume = block.consumers[c];
+				if(consume instanceof ConsumeItems) {
+					ConsumeItems items = (ConsumeItems) consume;
+					ItemStack[] stacks = items.items;
+					for (int i = 0; i < stacks.length; i++) {
+						ItemStack stack = stacks[i];
+						float ips = craftSpeed*stack.amount;
+						itemCons.get(stack.item, ips);
+					}
+					continue;
+				}
+//				if(consume instanceof ConsumeItemDynamic && config instanceof Integer) {
+//					int id = (Integer) config;
+//					ConsumeItemDynamic dynamic = (ConsumeItemDynamic) consume;
+//					dynamic.items.get(tmpBuild(config))
+//					if(plan != -1) {
+//						ItemStack[] requirements = ((UnitFactory)block).plans.get(plan).requirements;
+//						for (int i = 0; i < requirements.length; i++) {
+//							ItemStack stack = requirements[i];
+//							float ips = craftSpeed*stack.amount;
+//							itemCons.get(stack.item, ips);
+//						}
+//					}
+//					continue;
+//				}
+//				if(consume instanceof ConsumeItemFilter) {
+//					ConsumeItemFilter filter = (ConsumeItemFilter) consume;
+////					liquidCons.get(filter.it, 60*liquid.amount);
+////					continue;
+//				}
+				if(consume instanceof ConsumeLiquid) {
+					ConsumeLiquid liquid = (ConsumeLiquid) consume;
+					liquidCons.get(liquid.liquid, 60*liquid.amount);
+					continue;
+				}
+			}
+		}
+	}
+
+	
+	public static float drillSpeed(Drill drill, Item item, boolean liquid) {
+		float waterBoost = 1;
+		if(liquid) {
+			waterBoost = drill.liquidBoostIntensity*drill.liquidBoostIntensity;
+		}
+		int area = drill.size*drill.size;
+		return 60f*area*waterBoost/drill.getDrillTime(item);
+	}
+
+	public static boolean needDrillWaterBoost(Drill drill, Item item) {
+		return drillSpeed(drill, item, false)/(drill.size*drill.size) >= .75f;
+	}
+
+//	private static Building tmpBuilding = new Buildi
+	
+//	private static Building tmpBuild(Object config) {
+//		Blocks.additiveReconstructor.newBuilding();
+//		return null;
+//	}
 }

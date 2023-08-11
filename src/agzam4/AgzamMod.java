@@ -83,31 +83,6 @@ public class AgzamMod extends Mod {
 			} 
 		} catch (Throwable e) {
 		}
-//		Vars.state.rules.hasEnv(defaultEnv);
-//		Env.any;
-//		try {
-//			Object hotkeyObject = Core.settings.get("agzam4mod-units.settings.hideUnitsHotkey", null);
-//			if(hotkeyObject == null) {
-//				hideUnitsHotkey = new Axis(KeyCode.h);
-//			} else {
-//				if(hotkeyObject instanceof String) {
-//	                KeyCode keyCode = Arrays.stream(KeyCode.values()).filter(k -> k.value.equalsIgnoreCase((String) hotkeyObject)).findFirst().orElse(KeyCode.h);
-//					hideUnitsHotkey = new Axis(keyCode);
-//				} else if(hotkeyObject instanceof Integer) {
-//					hideUnitsHotkey = new Axis(KeyCode.byOrdinal((Integer) hotkeyObject));
-//				} else {
-//					hideUnitsHotkey = new Axis(KeyCode.h);
-//				}
-//			}
-//			hideUnits = Core.settings.getBool("agzam4mod-units.settings.hideUnits", false);
-//			comfortMega = Core.settings.getBool("agzam4mod-units.settings.comfortMega", false);
-//			drawUnitsHitboxes = Core.settings.getBool("agzam4mod-units.settings.drawUnitsHitboxes", true);
-//			dogeMaster = Core.settings.getBool("agzam4mod-units.settings.dogeMaster", false);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-		
-//		none = new TextureRegion(Core.atlas.find("agzam4mod-units-none"));
 		
 		minelaser = Core.atlas.find("minelaser");
 		minelaserEnd = Core.atlas.find("minelaser-end");
@@ -282,67 +257,7 @@ public class AgzamMod extends Mod {
 			public void resume() {
 				isPaused = false;
 			}
-		});
-		 
-//		Events.run(Trigger.update, () -> {
-//			if(dogeMaster) {
-//				float tx = 0;
-//				float ty = 0;
-//				
-//				if(player.unit() == null) return;
-//
-//				float px = player.x;
-//				float py = player.y;
-//				float dx = player.unit() == null ? 0 : player.unit().deltaX;
-//				float dy = player.unit() == null ? 0 : player.unit().deltaY;
-//				float nx = px + dx;
-//				float ny = py + dy;
-//				
-//				float hitsize = player.unit() == null ? 0 : player.unit().hitSize;
-//				float dangerZoneTime = 10 * tilesize;
-//				
-//				for (int i = 0; i < Groups.bullet.size(); i++) {
-//					Bullet bullet = Groups.bullet.index(i);
-//					if(bullet.team == player.team()) continue;
-//
-//					float bnx = bullet.x;// + bullet.deltaX;
-//					float bny = bullet.y;// + bullet.deltaY;
-//					float dist = Mathf.len(bnx - nx, bny - ny) - hitsize;
-//					float bspeed = bullet.type.speed;
-//					float bangle = Mathf.atan2(bullet.vel.x, bullet.vel.y);
-//					
-//					if(dist < dangerZoneTime) {
-//						float tbangle = Mathf.angle(px - bnx, py - bny); // bullet to player
-//						
-//						if(Math.abs(bangle - tbangle) > 45) continue;
-//						
-//						float k = dangerZoneTime*bspeed/dist;
-//						tx += Mathf.cos(tbangle)*k;
-//						ty += Mathf.sin(tbangle)*k;
-//					}
-////					float x = bullet.x;
-//				}
-//				
-//				float tangle = Mathf.angle(tx, ty);
-//				float tspeed = Mathf.len(tx, ty);
-//				float speed = player.unit().type.speed;
-//				
-//				// tspeed > dangerZoneTime
-//				if(tspeed > 0) {
-////					player.unit().velAddNet(speed*Mathf.cos(tangle), speed*Mathf.sin(tangle));
-////					player.unit().movePref(new Vec2(px + speed*Mathf.cos(tangle), py + speed*Mathf.sin(tangle)));
-//					player.unit().movePref(new Vec2(speed*Mathf.cos(tangle), speed*Mathf.sin(tangle)));
-////					moveTo(player.unit(), new Vec2(px + speed*Mathf.cos(tangle), py + speed*Mathf.sin(tangle)), 0, 1f, fa, null, comfortMega)
-//				}
-//			}
-//		});
-//		
-//		super.init();
-//		
-//		Drawf.dashCircle(0, 0, 80, Color.white);
-//		
-//		Groups.player.each(e -> Call.effect(Fx.reactorExplosion, e.mouseX, e.mouseY, 10, Color.white));
-		
+		});		
 	}
 	
 	private String getCustomAfk() {
@@ -399,49 +314,7 @@ public class AgzamMod extends Mod {
 	private void unlockBlocksContent() {
 		Vars.content.blocks().each(b -> {
 			b.buildVisibility = BuildVisibility.shown;
-//			b.destructible = true;
-//			b.alwaysReplace = true;
-//			b.replaceable = true;
-//	        b.breakable = true;
-//	        b.floating = true;
-//			b.group = BlockGroup.walls;
-//	        b.instantDeconstruct = true;
 		});
-		
-		
-//		CoreBlock.class.
-//		Classpu
-//		Vars.world.build(0).getClass().getMethods()
-//		Vars.player.unit().hasEffect(null)
-//		Payloadc c = (Payloadc) Vars.player.unit();
-//		c.dropLastPayload()
-//		new UnitPayload(UnitTypes.crawler.create(Team.derelict));
-//		Blocks.
-//		c.payloads(
-//		PayloadSource
-//		c.addPayload(new BuildPayload(Blocks.coreShard, Team.sharded));
-//		Vars.player.unit().addPayload(new BuildPayload(Blocks.coreShard, Team.sharded));
-//		Vars.player.unit().addPayload(new UnitPayload(UnitTypes.navanax.create(Team.green)));
-//		Events.fire(new WorldLoadEndEvent(null, null));
-//		Events.fire(new EventType.PickupEvent(Vars.player.unit(), Vars.world.build(0, 0)));
-//		Blocks.coreShard =  new CoreBlock("core-shard"){
-//			@Override
-//			public boolean canPlaceOn(Tile tile, Team team, int rotation) {
-//				return super.canPlaceOn(tile, team, rotation);
-//			}
-//			{
-//            requirements(Category.effect, BuildVisibility.editorOnly, with(Items.copper, 1000, Items.lead, 800));
-//            alwaysUnlocked = true;
-//
-//            isFirstTier = true;
-//            unitType = UnitTypes.alpha;
-//            health = 1100;
-//            itemCapacity = 4000;
-//            size = 3;
-//
-//            unitCapModifier = 8;
-//        }
-//		};
 	}
 
 //	private float megaAccel, megaDragg, megaSpeed;
