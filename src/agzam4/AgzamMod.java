@@ -158,6 +158,10 @@ public class AgzamMod extends Mod {
 //
 			settingsTable.name = ModWork.bungle("settings.name");
 			settingsTable.visible = true;
+			
+			addCategory(table, "utils");
+			addKeyBind(table, KeyBinds.openUtils);
+			
 
 			addCategory(table, "report-bugs");
 			table.button("Github", Icon.github, Styles.defaultt, () -> {
