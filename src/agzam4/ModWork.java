@@ -30,12 +30,16 @@ import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.consumers.ConsumeLiquids;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.defense.turrets.ItemTurret;
+import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.power.ConsumeGenerator;
 import mindustry.world.blocks.production.AttributeCrafter;
 import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.Drill.DrillBuild;
 import mindustry.world.blocks.production.Pump.PumpBuild;
+import mindustry.world.blocks.storage.StorageBlock;
+import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.production.Separator;
 
 public class ModWork {
@@ -63,6 +67,7 @@ public class ModWork {
 	}
 	
 	public enum KeyBinds {
+		openUtils("open-utils", KeyCode.u),
 		slowMovement("slow-movement", KeyCode.altLeft),
 		hideUnits("hide-units", KeyCode.h),
 		selection("selection", KeyCode.g),
@@ -505,7 +510,58 @@ public class ModWork {
 	}
 
 	public static boolean needDrillWaterBoost(Drill drill, Item item) {
-		return drillSpeed(drill, item, false)/(drill.size*drill.size) >= .75f;
+		return drillSpeed(drill, item, false) >= .75f; // /(drill.size*drill.size)
+	}
+
+	public static boolean acceptKey() {
+		return !Vars.state.isMenu() 
+        		&& !Vars.ui.chatfrag.shown() 
+        		&& !Vars.ui.schematics.isShown() 
+        		&& !Vars.ui.database.isShown() 
+        		&& !Vars.ui.consolefrag.shown() 
+        		&& !Vars.ui.content.isShown()
+        		&& !Vars.ui.logic.isShown()
+        		&& !Vars.ui.research.isShown()
+        		&& Core.scene.getKeyboardFocus() == null;
+	}
+
+	public static int getMaximumAccepted(Block block, Item item) {
+		return block.newBuilding().getMaximumAccepted(item);
+	}
+	
+	public static Seq<ItemStack> getMaximumAcceptedConsumers(Block block) {
+		Building tmp = block.newBuilding();
+		
+		Seq<ItemStack> items = new Seq<ItemStack>();
+		
+		if(tmp instanceof StorageBuild) {
+			Vars.content.items().each(i -> {
+				if(!Vars.state.rules.hiddenBuildItems.contains(i)) {
+					items.add(new ItemStack(i, tmp.getMaximumAccepted(i)));
+				}
+			});
+			return items;
+		}
+		
+		if(block instanceof ItemTurret && tmp instanceof ItemTurretBuild) {
+			ItemTurretBuild turret = (ItemTurretBuild) tmp;
+			ItemTurret iTurret = (ItemTurret) block;
+			
+			for (int item = Vars.content.items().size-1; item >= 0; item--) {
+				int maximumAccepted = turret.acceptStack(Vars.content.item(item), Integer.MAX_VALUE, null);
+				if(maximumAccepted > 0) items.add(
+						new ItemStack(Vars.content.item(item), maximumAccepted));
+			}
+			items.sort(s -> iTurret.ammoTypes.get(s.item).estimateDPS());
+		}
+		if(block.consumers != null && tmp.items != null) {
+			for (int c = 0; c < block.consumers.length; c++) {
+				consumeItems(block.consumers[c], tmp, 1f, (item, ips) -> {
+					items.add(new ItemStack(item, tmp.getMaximumAccepted(item)));
+				});
+			}
+		}
+		return items;
 	}
 
 //	private static Building tmpBuilding = new Buildi

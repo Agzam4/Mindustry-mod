@@ -43,23 +43,14 @@ import java.util.concurrent.TimeUnit;
 //import java.util.concurrent.TimeUnit;
 
 import agzam4.ModWork.KeyBinds;
+import agzam4.utils.PlayerUtils;
+import agzam4.utils.ProcessorGenerator;
 
 public class AgzamMod extends Mod {
 
-	static boolean hideUnits;
-
-//	private static final String settingCategoryName = Locale.getDefault() == Locale.ENGLISH ? "Mod settings" : "Настройки мода";
-//	private static final String buttonsText[] = Locale.getDefault() == Locale.ENGLISH ? 
-//			new String[] {"Hide units body", "Hide units key", "No \"ice moving\" on poly, mega, and", "Show hitboxes on hide", "Doge master"}: 
-//			new String[] {"Скрывать корпус юнитов", "Клаиша скрытия юнитов", "Убрать скольжение у меги", "Отоброжать хитбоксы когда скрыты", "Мастер уворота"};
-	
+	public static boolean hideUnits;
 	private static UnitTextures[] unitTextures;
-//	
-//	private TextureRegion none;
 	private TextureRegion minelaser, minelaserEnd;
-//
-//	private UnitType[] units;
-	
 	private Cell<TextButton> unlockContent = null, unlockBlocks = null;
 
 	private boolean isPaused = false;
@@ -70,10 +61,13 @@ public class AgzamMod extends Mod {
 
 	private boolean afkAvalible;
 	
+	public static long updates = 0;
+	
 	@Override
 	public void init() {
 		CursorTracker.init();
 		IndustryCalculator.init();
+		PlayerUtils.build();
 
 		try {
 			try {
@@ -94,10 +88,12 @@ public class AgzamMod extends Mod {
 		Core.scene.addListener(new InputListener() {
             @Override
             public boolean keyDown(InputEvent event, KeyCode keyCode) {
-                if (!Vars.state.isMenu() && !Vars.ui.chatfrag.shown() && !Vars.ui.schematics.isShown() && !Vars.ui.database.isShown() &&
-                		!Vars.ui.consolefrag.shown() && !Vars.ui.content.isShown()) {
-                	if (keyCode.equals(KeyBinds.hideUnits.key)) {
+                if (ModWork.acceptKey()) {
+                	if(keyCode.equals(KeyBinds.hideUnits.key)) {
                 		hideUnits(!hideUnits);
+                	}
+                	if(keyCode.equals(KeyBinds.openUtils.key)) {
+                		PlayerUtils.show();
                 	}
                 }
 
@@ -138,6 +134,7 @@ public class AgzamMod extends Mod {
 			addCategory(table, "calculations");
 			addCheck(table, "show-blocks-tooltip");
 			addCheck(table, "selection-calculations");
+			addCheck(table, "buildplans-calculations");
 			
 			addKeyBind(table, KeyBinds.selection);
 			addKeyBind(table, KeyBinds.clearSelection);
@@ -183,6 +180,7 @@ public class AgzamMod extends Mod {
 		Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
 
 		Events.run(Trigger.update, () -> {
+			updates++;
 			IndustryCalculator.update();
 			if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
 				if(Vars.player.unit() != null) {
@@ -196,6 +194,7 @@ public class AgzamMod extends Mod {
 			DamageNumbers.draw();
 			FireRange.draw();
 			IndustryCalculator.draw();
+			ProcessorGenerator.draw();
 			Draw.color();
 		});
 		

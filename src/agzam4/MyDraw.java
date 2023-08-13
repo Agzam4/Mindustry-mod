@@ -6,10 +6,14 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
+import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.geom.Position;
 import arc.scene.ui.layout.Scl;
 import arc.util.Align;
+import arc.util.Time;
 import arc.util.pooling.Pools;
+import mindustry.Vars;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.ui.Fonts;
@@ -137,5 +141,13 @@ public class MyDraw {
 		font.getData().setScale(1f);
 		
 		return layout;
+	}
+
+	public static void rotatingArcs(Position center, float rad, float speed) {
+		if(center == null) return;
+		float statAngle = AgzamMod.updates * speed;//*speed*.36f)%360;
+		for (int angle = 0; angle < 360; angle+=90) {
+			Lines.arc(center.getX(), center.getY(), rad, .2f, statAngle+angle);
+		}		
 	}
 }

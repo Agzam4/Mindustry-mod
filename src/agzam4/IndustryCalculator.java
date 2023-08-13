@@ -272,10 +272,12 @@ public class IndustryCalculator {
 		if(tileY >= Vars.world.height()) return;
 		
 //		DesktopInput;
-		if(Core.input.keyDown(KeyBinds.clearSelection.key)) { // TODO
-			if(selected.size > 0) {
-				selected.clear();
-				return;
+		if(ModWork.acceptKey()) {
+			if(Core.input.keyDown(KeyBinds.clearSelection.key)) { // TODO
+				if(selected.size > 0) {
+					selected.clear();
+					return;
+				}
 			}
 		}
 
@@ -427,7 +429,7 @@ public class IndustryCalculator {
 		if(selected.size > 0) {
 			info.append("\n[accent]Selected");
 			if(buildPlans) {
-				info.append("& build plans");
+				info.append(" & build plans");
 			}
 		} else if(buildPlans) {
 			info.append("\n[accent]Build plans");
