@@ -5,7 +5,7 @@
   main: "agzam4.AgzamMod"
   description: "Additional functionality"
   version: 1.0
-  minGameVersion: 142
+  minGameVersion: 145
   java: true
   hidden: false
 }
