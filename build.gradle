@@ -62,10 +62,6 @@ task jarAndroid{
         "d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
             .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
     }
-    
-    from(rootDir){
-        include "mod.json"
-    }
 }
 
 jar{
