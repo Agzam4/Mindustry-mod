@@ -185,7 +185,7 @@ public class AgzamMod extends Mod {
 
 		Events.run(Trigger.update, () -> {
 			updates++;
-			IndustryCalculator.update();
+			if(!Vars.mobile) IndustryCalculator.update();
 			if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
 				if(Vars.player.unit() != null) {
 					Vars.player.unit().vel.scl(.5f);
@@ -197,7 +197,7 @@ public class AgzamMod extends Mod {
 			CursorTracker.draw();
 			DamageNumbers.draw();
 			FireRange.draw();
-			IndustryCalculator.draw();
+			if(!Vars.mobile) IndustryCalculator.draw();
 			ProcessorGenerator.draw();
 			Draw.color();
 		});
