@@ -79,12 +79,13 @@ public class IndustryCalculator {
 				}
 			});
 		});
-		
-		Events.on(TileChangeEvent.class, e -> {
-			if(e.tile.block().isAir() && e.tile.floor().liquidDrop != null) {
-				hasLiquid[e.tile.floor().liquidDrop.id] = true;
-			}
-		});
+		if(!Vars.mobile) {
+			Events.on(TileChangeEvent.class, e -> {
+				if(e.tile.block().isAir() && e.tile.floor().liquidDrop != null) {
+					hasLiquid[e.tile.floor().liquidDrop.id] = true;
+				}
+			});
+		}
 		
 	}
 	
