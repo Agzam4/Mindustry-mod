@@ -72,7 +72,7 @@ jar{
     }
 
     from(rootDir){
-        include "mod.json"
+        include "mod.hjson"
     }
 
     from("assets/"){
@@ -83,7 +83,7 @@ jar{
 task deploy(type: Jar){
     dependsOn jarAndroid
     dependsOn jar
-    archiveFileName = "${base.archivesBaseName}.jar"
+    archiveFileName = "${base.archivesBaseName}.zip"
 
     from{ [zipTree("$buildDir/libs/${project.archivesBaseName}Desktop.jar"), zipTree("$buildDir/libs/${project.archivesBaseName}Android.jar")] }
 
