@@ -15,8 +15,10 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 17
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
     - name: Build mod jar
-      run: chmod +x ./gradlew deploy
+      run: ./gradlew deploy
     - name: Upload built jar file
       uses: actions/upload-artifact@v2
       with:
