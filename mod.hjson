@@ -7,5 +7,5 @@
   version: 1.0
   minGameVersion: 145
   java: true
-  hidden: false
+  hidden: true
 }
