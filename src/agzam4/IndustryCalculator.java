@@ -3,7 +3,6 @@ package agzam4;
 import static agzam4.ModWork.bs;
 import static agzam4.ModWork.gs;
 import static agzam4.ModWork.rs;
-import static mindustry.Vars.control;
 
 import agzam4.ModWork.KeyBinds;
 import arc.Core;
@@ -14,9 +13,10 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
 import arc.graphics.g2d.Lines;
+import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
-import arc.scene.Element;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.util.Align;
@@ -27,29 +27,19 @@ import mindustry.core.World;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
 import mindustry.game.EventType.WorldLoadEndEvent;
-import mindustry.game.Schematic;
 import mindustry.gen.Building;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Layer;
-import mindustry.graphics.Pal;
-import mindustry.mod.Mod;
 import mindustry.type.Item;
-import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.ui.Fonts;
-import mindustry.ui.fragments.HudFragment;
 import mindustry.world.Block;
-import mindustry.world.Build;
 import mindustry.world.Tile;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.GenericCrafter;
 import mindustry.world.blocks.production.Pump;
 import mindustry.world.blocks.production.SolidPump;
-import mindustry.world.blocks.units.UnitFactory;
-import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild;
 import mindustry.world.consumers.Consume;
-import mindustry.world.consumers.ConsumeItems;
-import mindustry.world.consumers.ConsumeLiquid;
 
 public class IndustryCalculator {
 
@@ -67,26 +57,26 @@ public class IndustryCalculator {
 	public static void init() {
 		balanceFragment = new BalanceFragment();
 		balanceFragment.build();
-		
+
 		Events.on(WorldLoadEndEvent.class, e -> {
 			for (int i = 0; i < hasLiquid.length; i++) {
 				hasLiquid[i] = false;
 			}
-			
-			Vars.world.tiles.forEach(t -> {
+
+			for (Tile t : Vars.world.tiles) { // FIXME: crush on android
 				if(t.block().isAir() && t.floor().liquidDrop != null) {
 					hasLiquid[t.floor().liquidDrop.id] = true;
 				}
-			});
+			}
+//			.forEach(t -> { // Error here
+//			});
 		});
-		if(!Vars.mobile) {
-			Events.on(TileChangeEvent.class, e -> {
-				if(e.tile.block().isAir() && e.tile.floor().liquidDrop != null) {
-					hasLiquid[e.tile.floor().liquidDrop.id] = true;
-				}
-			});
-		}
-		
+
+		Events.on(TileChangeEvent.class, e -> {
+			if(e.tile.block().isAir() && e.tile.floor().liquidDrop != null) {
+				hasLiquid[e.tile.floor().liquidDrop.id] = true;
+			}
+		});
 	}
 	
 //	private static final Block[] drills = {
@@ -120,7 +110,7 @@ public class IndustryCalculator {
 		int index = ModWork.getGradientIndex(health, maxHealth);
 		
 		if(ModWork.setting("show-units-health")) {
-			MyDraw.textColor(ModWork.round(health), 
+			MyDraw.textColor(ModWork.roundSimple(health), 
 					building.getX(), building.getY()+building.block.size*Vars.tilesize/2-MyDraw.textHeight/2f,
 					rs[index], gs[index], bs[index], 1, Align.center);
 		}
@@ -274,15 +264,14 @@ public class IndustryCalculator {
 		
 //		DesktopInput;
 		if(ModWork.acceptKey()) {
-			if(Core.input.keyDown(KeyBinds.clearSelection.key)) { // TODO
-				if(selected.size > 0) {
-					selected.clear();
-					return;
-				}
+			if(ModWork.keyDown(KeyBinds.clearSelection)) { // TODO
+				clearSelection();
 			}
 		}
-
-		if(Core.input.keyDown(KeyBinds.selection.key)) {
+		
+		if(ModWork.hasKeyBoard() ? 
+				ModWork.keyDown(KeyBinds.selection) 
+				: (ModWork.keyDown(KeyBinds.selection) && Core.input.isTouched())) {
 			if(selectStart.x == -1 || selectStart.y == -1) {
 				selectStart.x = tileX;
 				selectStart.y = tileY;
@@ -331,6 +320,13 @@ public class IndustryCalculator {
 		
 		calcBalance();
 //		balanceFragment.setText(info.toString());
+	}
+	
+	public static void clearSelection() {
+		if(selected.size > 0) {
+			selected.clear();
+			return;
+		}
 	}
 
 	private static float itemsBalance[] = new float[Vars.content.items().size];
@@ -535,9 +531,6 @@ public class IndustryCalculator {
 		balanceFragment.setText(info.toString());
 	}
 	
-	private static boolean needWarn(float a, float b) {
-		return Mathf.round(a/10) != Mathf.round(b);
-	}
 //	static int tileX(float cursorX){
 //        Vec2 vec = Core.input.mouseWorld(cursorX, 0);
 //        if(selectedBlock()){
@@ -751,32 +744,18 @@ public class IndustryCalculator {
 
 	    
 	    private void build() {
-			Core.scene.add(balanceFragment);
+			Core.scene.add(this);
 		}
 	    
-	    @Override
-	    public Element update(Runnable r) {
-	    	return super.update(r);
-	    }
-	    
-	    String text;
+	    String text = "";
 	    
 	    private void setText(String text) {
 	    	this.text = text;
-//	    	label.setText(text);
-		}
-	    
-	    private void updatePosition() {
-	    	
-//			setBounds(Core.scene.getWidth()-Core.scene.getWidth()/2,
-//					Core.scene.getHeight()-label.getHeight(),
-//					label.getWidth()/2, label.getHeight());
 		}
 	    
 		@Override
 		public void draw() {
 			if(!ModWork.setting("selection-calculations")) return;
-			updatePosition();
 			if(text.isEmpty()) return;
 			if(Vars.state.isMenu()) return;
 			if(Vars.ui.schematics.isShown()) return;
@@ -788,14 +767,13 @@ public class IndustryCalculator {
 
 			GlyphLayout layout = Pools.obtain(GlyphLayout.class, GlyphLayout::new);
 			font.setUseIntegerPositions(false);
-			font.getData().setScale(1f);//0.25f / Scl.scl(1f));
-			font.getData().setLineHeight(MyDraw.textHeight*2f);
+			font.getData().setScale(1f);
+			font.getData().setLineHeight(MyDraw.textHeight*2f * Scl.scl(1f));
 			layout.setText(font, text);
-
+			
 			float width = Math.max(layout.width, MyDraw.textHeight*20);
-			float x = Core.scene.getWidth() - width;// - MyDraw.textHeight;
-			float y = Core.scene.getHeight();// - layout.height/4;
-//			y -= layout.height;
+			float x = Core.scene.getWidth() - width;
+			float y = Core.scene.getHeight();
 			
 			Draw.color(0f, 0f, 0f, 0.75f);
 			Fill.rect(x + width/2 - MyDraw.textHeight, y + MyDraw.textHeight - layout.height/2,
@@ -806,7 +784,7 @@ public class IndustryCalculator {
 			font.setColor(1, 1, 1, 1);
 			font.draw(text, x, y, 0, Align.left, false);
 			Draw.color();
-			
+
 //			cLabel.setBounds(Core.scene.getWidth()-label.getWidth(),
 //					Core.scene.getHeight()-label.getHeight(),
 //					label.getWidth(), label.getHeight());
@@ -828,4 +806,5 @@ public class IndustryCalculator {
 	        Draw.rect("whiteui", x + w/2f, y + h/2f, w, h);
 	    }
 	}
+
 }

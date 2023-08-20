@@ -11,10 +11,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.geom.Position;
 import arc.scene.ui.layout.Scl;
 import arc.util.Align;
-import arc.util.Time;
 import arc.util.pooling.Pools;
-import mindustry.Vars;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.ui.Fonts;
 
@@ -124,7 +121,7 @@ public class MyDraw {
 
 		font.setUseIntegerPositions(false);
 		font.getData().setScale(0.25f / Scl.scl(1f));
-		font.getData().setLineHeight(textHeight*2f);
+		font.getData().setLineHeight(textHeight*2f * Scl.scl(1f));
 		layout.setText(font, text);
 		
 		y += layout.height;

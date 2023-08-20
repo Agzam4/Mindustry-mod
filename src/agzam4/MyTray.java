@@ -1,14 +1,18 @@
 package agzam4;
 
+import arc.Core;
+import arc.util.Log;
 import mindustry.Vars;
 
 public class MyTray {
 
 	public static boolean avalible = false;// = avalible();
 	
+	@SuppressWarnings("deprecation")
 	public static boolean avalible() { // FIXME
-		try {
-			return Package.getPackage("java.awt") != null;
+//		return false;
+//		try {
+//			return Package.getPackage("java.awt") != null;
 //			String result = Vars.mods.getScripts().runConsole("java.lang.Package.getPackage(\"java.awt\") != null;");//Vars.mods.mainLoader().getDefinedPackage(\"java.awt\")");
 //			if(result == null) return false;
 //			return !result.equals("null");//Vars.mods.mainLoader().getDefinedPackage("java.awt") != null;
@@ -20,15 +24,16 @@ public class MyTray {
 //			if(!scl) {
 //				Log.info("SystemClassLoader not loaded java.awt");
 //			}
-//			return Package.getPackage("java.awt") != null;
+			return Package.getPackage("java.awt") != null;
 //			return pcl && scl;
-		} catch (Error e) {
-			return false;
-		}
+//		} catch (Error e) {
+//			return false;
+//		}
 //		return MyTray.class.getClassLoader().getDefinedPackage("java.awt") != null;
 	}
 
 	public static void message(String string) {
+		//*
 		if(!avalible()) return;
 		java.awt.Toolkit.getDefaultToolkit().beep();
 		java.awt.SystemTray tray = java.awt.SystemTray.getSystemTray();
@@ -42,6 +47,7 @@ public class MyTray {
 			e1.printStackTrace();
 		}		
         trayIcon.displayMessage(Vars.appName, string, java.awt.TrayIcon.MessageType.INFO);
+        //*/
 	}
 
 }

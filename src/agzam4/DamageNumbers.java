@@ -9,7 +9,6 @@ import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.struct.Seq;
 import arc.util.Align;
-import arc.util.Log;
 import mindustry.content.StatusEffects;
 import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Groups;

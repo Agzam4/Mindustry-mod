@@ -1,6 +1,6 @@
 apply plugin: "java"
 
-version '1.0'
+version '1.1'
 
 sourceSets.main.java.srcDirs = ["src"]
 
@@ -16,12 +16,12 @@ java{
 }
 
 ext{
-    //the build number that this mod is made for
-    mindustryVersion = 'v145'
-    jabelVersion = "93fde537c7"
-    sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+    //the build number that this plugin is made for
+    mindustryVersion = 'v145' // fd23b8d1af  
+    //c7181999b246d586ea40def9cb5ffb3c8167896c
+    //fb4787ba52
+   	sdkRoot = System.getenv('ANDROID_HOME')// ?: System.getenv('ANDROID_SDK_ROOT')
 }
-
 //java 8 backwards compatibility flag
 allprojects{
     tasks.withType(JavaCompile){
@@ -31,9 +31,8 @@ allprojects{
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-
-    annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
+    compileOnly "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
+    //annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
 
 //force arc version
@@ -59,7 +58,7 @@ task jarAndroid{
         def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
 
         //dex and desugar files - this requires d8 in your PATH
-        "d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
+        "d8.bat $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
             .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
     }
 }
@@ -83,7 +82,7 @@ jar{
 task deploy(type: Jar){
     dependsOn jarAndroid
     dependsOn jar
-    archiveFileName = "${base.archivesBaseName}.jar"
+    archiveFileName = "${base.archivesBaseName}.zip"
 
     from{ [zipTree("$buildDir/libs/${project.archivesBaseName}Desktop.jar"), zipTree("$buildDir/libs/${project.archivesBaseName}Android.jar")] }
 

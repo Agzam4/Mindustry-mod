@@ -19,7 +19,6 @@ import arc.struct.Seq;
 import arc.struct.StringMap;
 import arc.util.Log;
 import arc.util.Nullable;
-import arc.util.Time;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.BlockBuildEndEvent;
@@ -40,7 +39,6 @@ import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.logic.LogicBlock;
 import mindustry.world.blocks.logic.LogicBlock.LogicBuild;
 import mindustry.world.blocks.logic.LogicBlock.LogicLink;
-import mindustry.world.blocks.storage.StorageBlock;
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 
@@ -639,7 +637,7 @@ public class ProcessorGenerator {
 		}
 		
 		public void approachTo(int x, int y) {
-			if(type.flying) line("ucontrol approach " + x + " " + y + " 5 0 0");
+			if(type.flying) line("ucontrol approach " + x + " " + y + " 3 0 0");
 			else pathfindTo(x, y);
 		}
 		

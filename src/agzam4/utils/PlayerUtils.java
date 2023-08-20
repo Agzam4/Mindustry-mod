@@ -1,12 +1,11 @@
 package agzam4.utils;
 
 import agzam4.ModWork;
+import arc.Core;
 import arc.graphics.Color;
-import arc.scene.style.Drawable;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
+import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.content.UnitTypes;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 
@@ -31,9 +30,14 @@ public class PlayerUtils {
 			
 			Table t = new Table();
 			p.add(t).row();
-			
+
             t.button(Blocks.microProcessor.emoji() + " " + ModWork.bungle("dialog.utils.processor-generator"), Styles.defaultt, () -> {
             			ProcessorGenerator.show();
+            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
+            
+//            if(Vars.mobile)
+            t.button("@back", Styles.defaultt, () -> {
+            	hide();
             }).growX().pad(10).padBottom(4).wrapLabel(false).row();
 		});
 	}

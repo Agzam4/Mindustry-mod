@@ -1,6 +1,5 @@
 package agzam4;
 
-import arc.Core;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;

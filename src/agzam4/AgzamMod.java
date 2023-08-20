@@ -17,21 +17,23 @@ import arc.scene.ui.Dialog;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
+import arc.util.Log;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
+import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
+import mindustry.game.EventType.PlayerConnect;
 import mindustry.game.EventType.Trigger;
 import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Call;
 import mindustry.gen.Icon;
+import mindustry.gen.Iconc;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.meta.BuildVisibility;
-
-import java.util.concurrent.TimeUnit;
 
 //import java.awt.AWTException;
 //import java.awt.Image;
@@ -43,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 //import java.util.concurrent.TimeUnit;
 
 import agzam4.ModWork.KeyBinds;
+import agzam4.debug.Debug;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
 
@@ -50,7 +53,7 @@ public class AgzamMod extends Mod {
 
 	public static boolean hideUnits;
 	private static UnitTextures[] unitTextures;
-	private TextureRegion minelaser, minelaserEnd;
+	private static TextureRegion minelaser, minelaserEnd;
 	private Cell<TextButton> unlockContent = null, unlockBlocks = null;
 
 	private boolean isPaused = false;
@@ -61,14 +64,17 @@ public class AgzamMod extends Mod {
 
 	private boolean afkAvalible;
 	
+	private boolean debug = false; // FIXME
+	
 	public static long updates = 0;
 	
 	@Override
 	public void init() {
-		CursorTracker.init();
-		IndustryCalculator.init();
-		PlayerUtils.build();
-
+		try {
+			Debug.init();
+			CursorTracker.init();
+			IndustryCalculator.init();
+			PlayerUtils.build();
 		try {
 			try {
 				MyTray.avalible = MyTray.avalible();
@@ -100,13 +106,17 @@ public class AgzamMod extends Mod {
                 return super.keyDown(event, keyCode);
             }
         });
-		//		UnitTypes.alpha.baseRegion.
-
-//		Vars.ui.chatfrag;
+		boolean needUpdate = UpdateInfo.needUpdate();
+		
 		Cons<SettingsTable> builder = settingsTable -> {
 			settingsTable.defaults().left(); // .size(350f, 800f)
 			
 			Table table = new Table();
+			
+			if(needUpdate) {
+				table.add(ModWork.bungle("need-update")).color(Color.red).colspan(4).pad(10).padBottom(4).row();
+			}
+			
 			addCategory(table, "unlock");
             
 			unlockContent = table.button(ModWork.bungle("settings.unlock-content"), Icon.lockOpen, Styles.defaultt, () -> {
@@ -143,10 +153,13 @@ public class AgzamMod extends Mod {
 			
 			try {
 				afkAvalible = true;
-				if(MyTray.avalible) {
+				if(MyTray.avalible && !Vars.mobile) {
 					table.field(getCustomAfk(), t -> {
 						Core.settings.put("agzam4mod.afk-start", t);
 					}).tooltip(ModWork.bungle("afk.automessage-start-tooltip")).width(Core.scene.getWidth()/2f).row();
+				} else {
+					afkAvalible = false;
+			        table.add(ModWork.bungle("afk-err")).color(Color.red).colspan(4).pad(10).padBottom(4).row();
 				}
 			} catch (Throwable e) {
 				afkAvalible = false;
@@ -164,28 +177,31 @@ public class AgzamMod extends Mod {
 			
 
 			addCategory(table, "report-bugs");
-			table.button("Github", Icon.github, Styles.defaultt, () -> {
+			table.button(Iconc.github + " Github", Styles.defaultt, () -> {
 	            if(!Core.app.openURI("https://github.com/Agzam4")){
 	                Vars.ui.showErrorMessage("@linkfail");
 	                Core.app.setClipboardText("https://github.com/Agzam4");
 	            }
-			}).growX().pad(10).padBottom(4);
+			}).growX().pad(20).padBottom(4);
 			table.row();
-			table.button("YouTube", Icon.play, Styles.defaultt, () -> {
+			table.button(Iconc.play + " YouTube", Styles.defaultt, () -> {
 	            if(!Core.app.openURI("https://www.youtube.com/@agzam4/")){
 	            	Vars.ui.showErrorMessage("@linkfail");
 	                Core.app.setClipboardText("https://www.youtube.com/@agzam4/");
 	            }
-			}).growX().pad(10).padBottom(4);
+			}).growX().pad(20).padBottom(4);
 			table.row();
 		};
-//		Blocks.cryofluidMixer;
-//		
-		Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
-
+		
+		if(needUpdate) {
+			Vars.ui.settings.addCategory(ModWork.bungle("settings.name") + " [red]" + Iconc.warning, Icon.wrench, builder);
+		} else {
+			Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
+		}
+		
 		Events.run(Trigger.update, () -> {
 			updates++;
-			if(!Vars.mobile) IndustryCalculator.update();
+			IndustryCalculator.update();
 			if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
 				if(Vars.player.unit() != null) {
 					Vars.player.unit().vel.scl(.5f);
@@ -197,7 +213,7 @@ public class AgzamMod extends Mod {
 			CursorTracker.draw();
 			DamageNumbers.draw();
 			FireRange.draw();
-			if(!Vars.mobile) IndustryCalculator.draw();
+			IndustryCalculator.draw();
 			ProcessorGenerator.draw();
 			Draw.color();
 		});
@@ -247,20 +263,43 @@ public class AgzamMod extends Mod {
 			}
 		});
 		
-
-		Core.app.addListener(new ApplicationListener() {
-
-			@Override
-			public void pause() {
-				isPaused = true;
-				pauseStartTime = System.nanoTime();
+		// Check if player in net game to save traffic and don't get err
+		Events.on(ClientServerConnectEvent.class, e -> { 
+			if(!UpdateInfo.isCurrentSessionChecked) {
+				UpdateInfo.check();
 			}
+		});
+
+		// mobile OK
+		
+		if(debug) {
+			MobileUI.build();
+		}
+		if(Vars.mobile) {
+			MobileUI.build();
+		} else {
+			Core.app.addListener(new ApplicationListener() {
+
+				@Override
+				public void pause() {
+					isPaused = true;
+					pauseStartTime = Time.nanos();
+				}
+				
+				@Override
+				public void resume() {
+					isPaused = false;
+				}
+			});	
+		}
 			
-			@Override
-			public void resume() {
-				isPaused = false;
-			}
-		});		
+
+		if(true) return;
+			
+		} catch (Throwable e) {
+			Log.err(e);
+			if(true) return;
+		}
 	}
 	
 	private String getCustomAfk() {
@@ -277,7 +316,9 @@ public class AgzamMod extends Mod {
         hotkeyTable.add(ModWork.bungle("settings.keybinds." + keybind.keybind), Color.white).left().padRight(40).padLeft(8);
         hotkeyTable.label(() -> keybind.key.toString()).color(Pal.accent).left().minWidth(90).padRight(20);
         hotkeyTable.button("@settings.rebind", Styles.defaultt, () -> {
-        	openDialog(keybind);
+        	if(ModWork.hasKeyBoard()) {
+            	openDialog(keybind);
+        	}
         }).width(130f);
         hotkeyTable.button("@settings.resetKey", Styles.defaultt, () -> {
         	keybind.key = keybind.def;
@@ -305,7 +346,8 @@ public class AgzamMod extends Mod {
 
 	private long getAfkTimeInSec() {
 		long afk = System.nanoTime()-pauseStartTime;
-		return TimeUnit.NANOSECONDS.toSeconds(afk);
+		
+		return afk / Time.nanosPerMilli / 1000;
 	}
 
 	private void unlockDatabaseContent() {
@@ -337,7 +379,7 @@ public class AgzamMod extends Mod {
 //		}
 //	}
 	
-	private void hideUnits(boolean b) {
+	public static void hideUnits(boolean b) {
 		hideUnits = b;
 		if(b) {
 			for (int i = 0; i < unitTextures.length; i++) {

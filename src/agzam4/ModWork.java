@@ -8,6 +8,7 @@ import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
+import arc.util.Log;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.core.UI;
@@ -38,7 +39,6 @@ import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.Drill.DrillBuild;
 import mindustry.world.blocks.production.Pump.PumpBuild;
-import mindustry.world.blocks.storage.StorageBlock;
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.production.Separator;
 
@@ -91,7 +91,18 @@ public class ModWork {
 		void put() {
 			Core.settings.put("agzam4mod.settings.keybinds." + keybind, key.ordinal());
 		}
+
+		boolean isDown = false;
+
+		boolean isDown() {
+			return isDown;
+		}
 		
+	}
+	
+	public static boolean keyDown(KeyBinds key) {
+		if(key.isDown()) return true;
+		return Core.input.keyDown(key.key);
 	}
 	
 	public static int getGradientIndex(float health, float maxHealth) {
@@ -212,8 +223,20 @@ public class ModWork {
 		return Core.settings.getBool("agzam4mod.settings." + string, true);
 	}
 	
+	public static boolean settingDef(String string, boolean def) {
+		return Core.settings.getBool("agzam4mod.settings." + string, def);
+	}
+	
 	public static void setting(String string, boolean value) {
 		Core.settings.put("agzam4mod.settings." + string, value);
+	}
+	
+	public static void setting(String string, float value) {
+		Core.settings.put("agzam4mod.settings." + string, value);
+	}
+	
+	public static float settingFloat(String string, float def) {
+		return Core.settings.getFloat("agzam4mod.settings." + string, def);
 	}
 
 	public static String strip(String name) {
@@ -230,7 +253,7 @@ public class ModWork {
 			{"F", "Ф"},
 			{"G", "Г"},
 			{"H", "Х"},
-			{"I", "И"},
+			{"I", "\u0418"},
 			{"J", "ДЖ"},
 			{"K", "К"},
 			{"L", "Л"},
@@ -553,8 +576,9 @@ public class ModWork {
 						new ItemStack(Vars.content.item(item), maximumAccepted));
 			}
 			items.sort(s -> iTurret.ammoTypes.get(s.item).estimateDPS());
+			return items;
 		}
-		if(block.consumers != null && tmp.items != null) {
+		if(block.consumers != null) {
 			for (int c = 0; c < block.consumers.length; c++) {
 				consumeItems(block.consumers[c], tmp, 1f, (item, ips) -> {
 					items.add(new ItemStack(item, tmp.getMaximumAccepted(item)));
@@ -563,6 +587,12 @@ public class ModWork {
 		}
 		return items;
 	}
+
+	public static boolean hasKeyBoard() {
+		if(Vars.mobile) return Core.input.useKeyboard();
+		return true;
+	}
+
 
 //	private static Building tmpBuilding = new Buildi
 	
