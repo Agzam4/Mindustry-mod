@@ -1,5 +1,7 @@
 package agzam4;
 
+import java.lang.reflect.Field;
+
 import arc.Core;
 import arc.Events;
 import arc.func.Cons2;
@@ -9,8 +11,10 @@ import arc.math.Mathf;
 import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Log;
+import arc.util.Reflect;
 import arc.util.Strings;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.core.UI;
 import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Building;
@@ -28,12 +32,17 @@ import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeItemFilter;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
+import mindustry.world.consumers.ConsumeLiquidFilter;
 import mindustry.world.consumers.ConsumeLiquids;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatCat;
+import mindustry.world.modules.LiquidModule.LiquidConsumer;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
 import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.power.ConsumeGenerator;
+import mindustry.world.blocks.power.PowerGenerator;
 import mindustry.world.blocks.production.AttributeCrafter;
 import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
 import mindustry.world.blocks.production.Drill;
@@ -163,6 +172,17 @@ public class ModWork {
 		}
 		if(block instanceof ConsumeGenerator) {
 			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
+		} else {
+			Field[] fields = block.getClass().getFields();
+			for (int i = 0; i < fields.length; i++) {
+				if(fields[i].getName().equals("itemDuration")) {
+					try {
+						craftSpeed = 60/fields[i].getFloat(block);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 		return craftSpeed;
 	}
@@ -202,6 +222,17 @@ public class ModWork {
 		}
 		if(block instanceof ConsumeGenerator) {
 			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
+		} else {
+			Field[] fields = block.getClass().getFields();
+			for (int i = 0; i < fields.length; i++) {
+				if(fields[i].getName().equals("itemDuration")) {
+					try {
+						craftSpeed = 60/fields[i].getFloat(block);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 		return craftSpeed;
 	}
@@ -351,7 +382,7 @@ public class ModWork {
 	public static void consumeLiquids(Consume consume, Building building, float craftSpeed, Cons2<Liquid, Float> cons) {
 		if(consume instanceof ConsumeLiquid) {
 			ConsumeLiquid liquid = (ConsumeLiquid) consume;
-			float lps = 60f*craftSpeed*liquid.amount*building.timeScale();
+			float lps = 60f*liquid.amount*building.timeScale();
 			cons.get(liquid.liquid, lps);
 			return;
 		}

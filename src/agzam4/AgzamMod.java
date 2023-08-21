@@ -23,7 +23,6 @@ import arc.util.Time;
 import mindustry.Vars;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
-import mindustry.game.EventType.PlayerConnect;
 import mindustry.game.EventType.Trigger;
 import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Call;

@@ -23,6 +23,7 @@ import arc.util.Align;
 import arc.util.Nullable;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
@@ -63,13 +64,11 @@ public class IndustryCalculator {
 				hasLiquid[i] = false;
 			}
 
-			for (Tile t : Vars.world.tiles) { // FIXME: crush on android
+			for (Tile t : Vars.world.tiles) {
 				if(t.block().isAir() && t.floor().liquidDrop != null) {
 					hasLiquid[t.floor().liquidDrop.id] = true;
 				}
 			}
-//			.forEach(t -> { // Error here
-//			});
 		});
 
 		Events.on(TileChangeEvent.class, e -> {
@@ -123,6 +122,7 @@ public class IndustryCalculator {
 			
 			StringBuilder info = new StringBuilder(block.emoji() + " " + block.localizedName.toUpperCase());
 
+//			info.append("\nCraft speed: " + craftSpeed);
 //			MyDraw.textColor("craftSpeed: " + craftSpeed, mouseX, mouseY+30, 0, 0, 1f, 1, Align.center);
 			if(craftSpeed <= 0) return;
 
@@ -131,8 +131,8 @@ public class IndustryCalculator {
 					ModWork.consumeItems(block.consumers[i], building, craftSpeed, (item, ips) -> {
 						addItemInfo(info, block, item, ips, false);
 					});
-					ModWork.consumeLiquids(block.consumers[i], building, craftSpeed, (liquid, ips) -> {
-						addLiquidInfo(info, block, liquid, ips, false);
+					ModWork.consumeLiquids(block.consumers[i], building, craftSpeed, (liquid, lps) -> {
+						addLiquidInfo(info, block, liquid, lps, false);
 					});
 				}
 			}
