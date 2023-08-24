@@ -73,6 +73,7 @@ public class AgzamMod extends Mod {
 			Debug.init();
 			CursorTracker.init();
 			IndustryCalculator.init();
+//			WaveViewer.init();
 			PlayerUtils.build();
 		try {
 			try {
@@ -214,6 +215,7 @@ public class AgzamMod extends Mod {
 			FireRange.draw();
 			IndustryCalculator.draw();
 			ProcessorGenerator.draw();
+//			WaveViewer.draw();
 			Draw.color();
 		});
 		

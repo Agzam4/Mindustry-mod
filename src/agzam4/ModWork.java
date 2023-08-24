@@ -10,8 +10,6 @@ import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
-import arc.util.Log;
-import arc.util.Reflect;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.content.Blocks;
@@ -32,11 +30,7 @@ import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeItemFilter;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
-import mindustry.world.consumers.ConsumeLiquidFilter;
 import mindustry.world.consumers.ConsumeLiquids;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.StatCat;
-import mindustry.world.modules.LiquidModule.LiquidConsumer;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
@@ -50,6 +44,7 @@ import mindustry.world.blocks.production.Drill.DrillBuild;
 import mindustry.world.blocks.production.Pump.PumpBuild;
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.production.Separator;
+import mindustry.world.blocks.production.SolidPump;
 
 public class ModWork {
 
@@ -182,6 +177,13 @@ public class ModWork {
 						e.printStackTrace();
 					}
 				}
+				if(fields[i].getName().equals("useTime")) {
+					try {
+						craftSpeed = 60/fields[i].getFloat(block);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 		return craftSpeed;
@@ -226,6 +228,13 @@ public class ModWork {
 			Field[] fields = block.getClass().getFields();
 			for (int i = 0; i < fields.length; i++) {
 				if(fields[i].getName().equals("itemDuration")) {
+					try {
+						craftSpeed = 60/fields[i].getFloat(block);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+				}
+				if(fields[i].getName().equals("useTime")) {
 					try {
 						craftSpeed = 60/fields[i].getFloat(block);
 					} catch (IllegalArgumentException | IllegalAccessException e) {
@@ -464,12 +473,29 @@ public class ModWork {
 	
 
 	protected static LiquidStack countLiquid(Pump pump, Tile tile){
+		if(tile == null) return null;
         final Seq<Tile> tempTiles = new Seq<>();
+
+        if(pump instanceof SolidPump) {
+        	SolidPump solidPump = (SolidPump) pump;
+
+        	float amount = 0;
+    		for(Tile other : tile.getLinkedTilesAs(pump, tempTiles)){
+    	     	if(other != null && !other.floor().isLiquid) {
+    				amount += solidPump.baseEfficiency;
+    				if(solidPump.attribute != null) {
+    					amount += other.floor().attributes.get(solidPump.attribute);
+    				}
+    	     	}
+    		}
+        	
+    		return new LiquidStack(solidPump.result, amount);
+        }
         
         float amount = 0f;
 		Liquid liquidDrop = null;
 
-		for(Tile other : tile.getLinkedTiles(tempTiles)){
+		for(Tile other : tile.getLinkedTilesAs(pump, tempTiles)){
 	     	if(other != null && other.floor().liquidDrop != null) {
 				liquidDrop = other.floor().liquidDrop;
 				amount += other.floor().liquidMultiplier;
