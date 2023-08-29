@@ -36,6 +36,18 @@ public class MyDraw {
         Draw.z(pz);
     }
     
+    public static void normal(TextureRegion region, float x, float y, float w, float h, float layer){
+        float pz = Draw.z();
+        Draw.z(layer);
+        Draw.color(Color.white);
+        Draw.blend(Blending.normal);
+        Draw.rect(region, x, y, w, h, 0);
+        Draw.blend();
+        Draw.color();
+        Draw.z(pz);
+    }
+    
+    
     public static void additive(TextureRegion region, Color color, float alpha, float x, float y, float rotation, float layer){
         float pz = Draw.z();
         Draw.z(layer);

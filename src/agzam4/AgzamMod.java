@@ -18,9 +18,12 @@ import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
+import arc.util.Reflect;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.ctype.ContentType;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.Trigger;
@@ -30,9 +33,13 @@ import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.meta.BuildVisibility;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 //import java.awt.AWTException;
 //import java.awt.Image;
@@ -69,9 +76,25 @@ public class AgzamMod extends Mod {
 	
 	@Override
 	public void init() {
+		
+		MyFonts.load();
+//		Blocks.additiveReconstructor.hasEmoji();
+		
 		try {
 			Debug.init();
 			CursorTracker.init();
+			
+			Vars.content.items().each(b -> {
+				if(!b.hasEmoji()) {
+					MyFonts.createEmoji(b.uiIcon, b.name);
+				}
+			});
+			Vars.content.blocks().each(b -> {
+				if(!b.hasEmoji()) {
+					MyFonts.createEmoji(b.uiIcon, b.name);
+//					Vars.ui.hudfrag;
+				}
+			});
 			IndustryCalculator.init();
 //			WaveViewer.init();
 			PlayerUtils.build();

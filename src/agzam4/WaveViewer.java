@@ -2,8 +2,6 @@ package agzam4;
 
 import arc.Events;
 import arc.func.Cons;
-import arc.math.geom.Point2;
-import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.game.EventType.TapEvent;

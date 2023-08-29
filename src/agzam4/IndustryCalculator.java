@@ -13,7 +13,6 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
 import arc.graphics.g2d.Lines;
-import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Scl;
@@ -23,7 +22,6 @@ import arc.util.Align;
 import arc.util.Nullable;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
-import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
@@ -246,7 +244,7 @@ public class IndustryCalculator {
 	private static final Color select = Color.valueOf("ffffff"), 
 			selectBack = Color.valueOf("a3a3a3"), selectHower = Color.valueOf("ffffff").a(.5f);
 	
-	private static final Seq<Tile> selected = new Seq<>();
+	private static Seq<Tile> selected = new Seq<>();
 
 	private static Point2 selectStart = new Point2(-1, -1);
 	private static Point2 selectEnd = new Point2(-1, -1);
@@ -269,9 +267,9 @@ public class IndustryCalculator {
 			}
 		}
 		
-		if(ModWork.hasKeyBoard() ? 
+		if(ModWork.acceptKey() && (ModWork.hasKeyBoard() ? 
 				ModWork.keyDown(KeyBinds.selection) 
-				: (ModWork.keyDown(KeyBinds.selection) && Core.input.isTouched())) {
+				: (ModWork.keyDown(KeyBinds.selection) && Core.input.isTouched()))) {
 			if(selectStart.x == -1 || selectStart.y == -1) {
 				selectStart.x = tileX;
 				selectStart.y = tileY;
@@ -339,6 +337,8 @@ public class IndustryCalculator {
 	private static float itemsBalanceFixed[] = new float[Vars.content.items().size];
 	private static float liquidBalanceFixed[] = new float[Vars.content.liquids().size];
 
+
+	static Seq<Tile> selected_ = new Seq<>();
 	
 	static int updates = 0;
 	private static void calcBalance() {
@@ -431,6 +431,17 @@ public class IndustryCalculator {
 		} else if(buildPlans) {
 			info.append("\n[accent]Build plans");
 		}
+
+		Seq<Tile> selected_ = new Seq<>();
+		
+		for (int s = 0; s < selected.size; s++) {
+			Tile tile = selected.get(s);
+			if(tile.build == null) continue;
+			if(selected_.contains(tile.build.tile)) continue;
+			selected_.add(tile);
+		}
+		
+		selected = selected_;
 		
 		for (int s = 0; s < selected.size; s++) {
 			Tile tile = selected.get(s);
@@ -784,22 +795,7 @@ public class IndustryCalculator {
 			font.setColor(1, 1, 1, 1);
 			font.draw(text, x, y, 0, Align.left, false);
 			Draw.color();
-
-//			cLabel.setBounds(Core.scene.getWidth()-label.getWidth(),
-//					Core.scene.getHeight()-label.getHeight(),
-//					label.getWidth(), label.getHeight());
-//			label.setPosition(Core.scene.getWidth()-label.getWidth(),
-//					Core.scene.getHeight()-label.getHeight());
 			
-//			debug = "Draw...";
-//			Draw.color(1, 0, 0, .5f);
-//	        rect(this.x, this.y, getWidth(), getHeight());
-//
-//			Draw.color(0, 1, 0, .5f);
-//	        rect(label.x, label.y, label.getWidth(), label.getHeight());
-//			Draw.color(0, 1, 0, .5f);
-//	        Draw.rect("whiteui", x, y, getWidth(), getHeight());
-//			super.draw();
 		} 
 		
 		protected void rect(float x, float y, float w, float h){
