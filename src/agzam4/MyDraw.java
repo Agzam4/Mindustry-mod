@@ -139,12 +139,12 @@ public class MyDraw {
 		y += layout.height;
 		
 		Draw.color(0f, 0f, 0f, 0.5f);
-		Fill.rect(x + layout.width / 2, y + textHeight - layout.height / 2, layout.width + 4, layout.height + 3);
+		Lines.rect(x + layout.width / 2, y + textHeight - layout.height / 2, layout.width + 4, layout.height + 3);
 		
 		Draw.color();
 		Draw.alpha(1f);
 		font.setColor(1, 1, 1, 1);
-		font.draw(text, x, y + textHeight, 0, Align.left, false);
+//		font.draw(text, x, y + textHeight, 0, Align.left, false);
 		Draw.color();
 		
 		font.getData().setScale(1f);

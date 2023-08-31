@@ -52,6 +52,8 @@ import java.lang.reflect.Modifier;
 
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;
+import agzam4.industry.BuildTooltip;
+import agzam4.industry.IndustryCalculator;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
 
@@ -77,7 +79,10 @@ public class AgzamMod extends Mod {
 	@Override
 	public void init() {
 		
+//		DesktopLauncher;
+		
 		MyFonts.load();
+		
 //		Blocks.additiveReconstructor.hasEmoji();
 		
 		try {

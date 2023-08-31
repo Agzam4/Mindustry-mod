@@ -1,6 +1,7 @@
 package agzam4;
 
 import agzam4.ModWork.KeyBinds;
+import agzam4.industry.IndustryCalculator;
 import agzam4.utils.PlayerUtils;
 import arc.Core;
 import arc.func.Cons;
