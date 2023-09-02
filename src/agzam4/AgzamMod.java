@@ -101,7 +101,7 @@ public class AgzamMod extends Mod {
 				}
 			});
 			IndustryCalculator.init();
-//			WaveViewer.init();
+			WaveViewer.init();
 			PlayerUtils.build();
 		try {
 			try {
@@ -243,7 +243,7 @@ public class AgzamMod extends Mod {
 			FireRange.draw();
 			IndustryCalculator.draw();
 			ProcessorGenerator.draw();
-//			WaveViewer.draw();
+			WaveViewer.draw();
 			Draw.color();
 		});
 		
