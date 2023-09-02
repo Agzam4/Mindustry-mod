@@ -9,6 +9,7 @@ import arc.graphics.g2d.Lines;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.game.EventType.TapEvent;
 import mindustry.game.EventType.Trigger;
@@ -26,6 +27,8 @@ public class WaveViewer {
 	public static Seq<SpawnInfo> spawns = new Seq<>();
 	static int wave = -1;
 	
+	static boolean updateSpawns = false;
+	
 	public static void init() {
 		Events.on(TapEvent.class, e -> {
 			final int pos = e.tile.pos();
@@ -35,15 +38,11 @@ public class WaveViewer {
 					waveDialog.title.setColor(Color.white);
 					waveDialog.closeOnBack();
 					waveDialog.cont.pane(op -> {
-//						op.defaults().grow().minSize(Core.scene.getWidth()/2.5f, Core.scene.getHeight()/2.5f);
-						
 						Table p = new Table();
 						p.defaults().left().pad(15);
 						
 						Table t = new Table();
 						t.defaults().pad(10);
-						
-//						op.defaults().left().pad(5);
 						
 						SpawnInfo current = new SpawnInfo(e.tile);
 						SpawnInfo all = new SpawnInfo(null);
@@ -78,12 +77,17 @@ public class WaveViewer {
 				}
 			}
 		});
+//		Vars.spawner;
 
 		Events.run(Trigger.update, () -> { // Changed by rules
-			if(spawnsCount != Vars.spawner.getSpawns().size) {
+			if(!ModWork.setting("wave-viewer")) return;
+			Vars.spawner.isSpawning(); //asdasdiasfd
+			if(spawnsCount != Vars.spawner.getSpawns().size || (updateSpawns && updates%60 == 0)) {
+				updateSpawns = false;
 				createSpawns();
 				return;
 			}
+			updates++;
 			if(Vars.state.wave-1 != wave) update(Vars.state.wave-1);
 		});
 		
@@ -92,7 +96,9 @@ public class WaveViewer {
 		});
 	}
 	
-	private static int spawnsCount = 0;
+	private static int spawnsCount = -1;
+	static int updates = 0;
+	
 	private static void createSpawns() {
 		spawns.clear();
 
@@ -105,14 +111,21 @@ public class WaveViewer {
 
 	private static void update(int wave) {
 		WaveViewer.wave = wave;
+		for (int i = 0; i < spawns.size; i++) {
+			spawns.get(i).reset();
+		}		
 		for (int g = 0; g < Vars.state.rules.spawns.size; g++) {
 			SpawnGroup group = Vars.state.rules.spawns.get(g);
+			for (int i = 0; i < Vars.spawner.getSpawns().size; i++) {
+				spawns.get(i).tile = Vars.spawner.getSpawns().get(i);
+			}		
 			spawnByPos(spawns, group.spawn, spawn -> spawn.addInfo(group, wave));
 		}
 	}
 	
 	private static void spawnByPos(Seq<SpawnInfo> spawns, int pos, Cons<SpawnInfo> cons) {
 		for (int i = 0; i < spawns.size; i++) {
+			if(spawns.get(i).tile.overlay() != Blocks.spawn) updateSpawns = true;
 			if(pos == -1 || pos == spawns.get(i).tile.pos()) {
 				cons.get(spawns.get(i));
 			}
@@ -123,11 +136,12 @@ public class WaveViewer {
 
 	public static void draw() {
 		if(spawns == null) return;
+		if(!ModWork.setting("wave-viewer")) return;
 		
 		for (int s = 0; s < spawns.size; s++) {
 			SpawnInfo info = spawns.get(s);
 			
-			MyDraw.text(info.toString() + "\n[gray]Tap for more waves", info.tile.worldx(), info.tile.worldy(), true);
+			MyDraw.text(info.toString() + "\n[gray]Tap for more waves", info.tile.worldx(), info.tile.worldy() + MyDraw.textHeight*1, true);
 
 			Draw.z(Layer.effect);
 			Draw.color(Vars.state.rules.waveTeam.color);
@@ -138,33 +152,21 @@ public class WaveViewer {
 			
 			Tile tile = Vars.world.tile(World.toTile(mouseX), World.toTile(mouseY));
 			
-			if(tile != null && tile == info.tile) {
-				size = (size-1)*0.9f+1;
-			} else {
-				size = (size-.7f)*0.9f+.7f;
+			if(tile != null) {
+				if(tile.pos() == info.tile.pos()) {
+					size = (size-1)*0.9f+1;
+				} else {
+					size = (size-.7f)*0.9f+.7f;
+				}
+				
+				MyDraw.rotatingArcs(info.tile, Vars.tilesize * size, 1f);
 			}
-			
-			MyDraw.rotatingArcs(info.tile, Vars.tilesize * size, 1f);
 		}
-//		for (int g = 0; g < Vars.state.rules.spawns.size; g++) {
-//			StringBuilder waveInfo = new StringBuilder();
-//			
-//			SpawnGroup group = Vars.state.rules.spawns.get(g);
-//			group.getSpawned(Vars.state.wave);
-//			if(g != 0) waveInfo.append(' ');
-//			waveInfo.append(group.type.emoji());
-//			waveInfo.append(' ');
-//			waveInfo.append(group.getSpawned(Vars.state.wave));
-//			
-//			Point2 spawnpoint = Point2.unpack(group.spawn);
-//			MyDraw.text(waveInfo.toString(), spawnpoint.x*Vars.tilesize, spawnpoint.y*Vars.tilesize, true);
-//			
-//		}
 	}
 
 	private static class SpawnInfo {
 
-		final Tile tile;
+		Tile tile;
 
 		int unitsCount[] = new int[Vars.content.units().size];
 		int unitsShield = 0;
@@ -183,13 +185,14 @@ public class WaveViewer {
 		}
 
 		public void addInfo(SpawnGroup group, int wave) {
-			addUnits(group.type, group.getSpawned(wave));
+			int spawned = group.getSpawned(wave);
+			addUnits(group.type, spawned);
 			unitsShield += group.getShield(wave);
-			float health = group.type.health;
+			float health = group.type.health * spawned;
 			if(group.effect != null) {
 				health *= group.effect.healthMultiplier;
 			}
-			unitsShield += group.getShield(wave);
+			unitsShield += group.getShield(wave) * spawned;
 			unitsHealth += health;
 		}
 

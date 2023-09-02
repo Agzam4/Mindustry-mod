@@ -33,6 +33,7 @@ import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
+import mindustry.mod.Mods.LoadedMod;
 import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
@@ -76,9 +77,12 @@ public class AgzamMod extends Mod {
 	
 	public static long updates = 0;
 	
+	LoadedMod mod;
+	
 	@Override
 	public void init() {
 		
+		mod = Vars.mods.getMod("agzam4mod");
 //		DesktopLauncher;
 		
 		MyFonts.load();
@@ -143,6 +147,8 @@ public class AgzamMod extends Mod {
 			
 			if(needUpdate) {
 				table.add(ModWork.bungle("need-update")).color(Color.red).colspan(4).pad(10).padBottom(4).row();
+				
+				table.button("@mods.browser.reinstall", Icon.download, () -> UpdateInfo.githubImportMod(mod.getRepo(), null));
 			}
 			
 			addCategory(table, "unlock");
@@ -166,6 +172,7 @@ public class AgzamMod extends Mod {
             addCheck(table, "show-turrets-range");
             addCheck(table, "show-build-health");
             addCheck(table, "show-units-health");
+            addCheck(table, "wave-viewer");
 			addKeyBind(table, KeyBinds.hideUnits);
 			addKeyBind(table, KeyBinds.slowMovement);
 
