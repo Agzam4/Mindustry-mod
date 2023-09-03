@@ -18,12 +18,10 @@ import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
-import arc.util.Reflect;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
-import mindustry.content.Blocks;
-import mindustry.ctype.ContentType;
+import mindustry.core.UI;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.Trigger;
@@ -34,27 +32,13 @@ import mindustry.gen.Iconc;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
-import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.meta.BuildVisibility;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
-//import java.awt.AWTException;
-//import java.awt.Image;
-//import java.awt.SystemTray;
-//import java.awt.Toolkit;
-//import java.awt.TrayIcon;
-//import java.awt.TrayIcon.MessageType;
-//import java.awt.image.BufferedImage;
-//import java.util.concurrent.TimeUnit;
-
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;
-import agzam4.industry.BuildTooltip;
 import agzam4.industry.IndustryCalculator;
+import agzam4.uiOverride.UiOverride;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
 
@@ -90,6 +74,7 @@ public class AgzamMod extends Mod {
 //		Blocks.additiveReconstructor.hasEmoji();
 		
 		try {
+			UiOverride.init();
 			Debug.init();
 			CursorTracker.init();
 			
@@ -151,6 +136,7 @@ public class AgzamMod extends Mod {
 				table.button("@mods.browser.reinstall", Icon.download, () -> UpdateInfo.githubImportMod(mod.getRepo(), null));
 			}
 			
+			
 			addCategory(table, "unlock");
             
 			unlockContent = table.button(ModWork.bungle("settings.unlock-content"), Icon.lockOpen, Styles.defaultt, () -> {
@@ -209,6 +195,9 @@ public class AgzamMod extends Mod {
 			
 			addCategory(table, "utils");
 			addKeyBind(table, KeyBinds.openUtils);
+			
+			addCategory(table, "custom-ui");
+			addCheck(table, "custom-chat-fragment", b -> UiOverride.set());
 			
 
 			addCategory(table, "report-bugs");
@@ -371,8 +360,13 @@ public class AgzamMod extends Mod {
 	}
 
 	private void addCheck(Table table, String settings) {
+		addCheck(table, settings, null);
+	}
+	
+	private void addCheck(Table table, String settings, Cons<Boolean> listener) {
 		table.check(ModWork.bungle("settings." + settings), ModWork.setting(settings), b -> {
 			ModWork.setting(settings, b);
+			if(listener != null) listener.get(b);
 		}).colspan(4).pad(10).padBottom(4).tooltip(ModWork.bungle("settings-tooltip." + settings)).row();;
 	}
 	
