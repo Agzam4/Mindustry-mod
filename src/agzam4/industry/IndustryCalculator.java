@@ -4,8 +4,10 @@ import static agzam4.ModWork.bs;
 import static agzam4.ModWork.gs;
 import static agzam4.ModWork.rs;
 
+import agzam4.CursorTracker;
 import agzam4.ModWork;
 import agzam4.MyDraw;
+import agzam4.UnitTextures;
 import agzam4.ModWork.KeyBinds;
 import arc.Core;
 import arc.Events;
@@ -31,6 +33,7 @@ import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
 import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -39,6 +42,10 @@ import mindustry.type.Liquid;
 import mindustry.ui.Fonts;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.defense.turrets.BaseTurret.BaseTurretBuild;
+import mindustry.world.blocks.defense.turrets.ItemTurret;
+import mindustry.world.blocks.defense.turrets.Turret;
+import mindustry.world.blocks.defense.turrets.Turret.TurretBuild;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.GenericCrafter;
 import mindustry.world.blocks.production.Pump;
@@ -314,6 +321,8 @@ public class IndustryCalculator {
 	private static float itemsBalanceFixed[] = new float[Vars.content.items().size];
 	private static float liquidBalanceFixed[] = new float[Vars.content.liquids().size];
 
+	private static float airDps = 0;
+	private static float groundDps = 0;
 
 	static Seq<Tile> selected_ = new Seq<>();
 	
@@ -339,6 +348,9 @@ public class IndustryCalculator {
 			}
 			updates = 0;
 		}
+
+		airDps = 0;
+		groundDps = 0;
 
 		boolean buildPlans = false;
 		if(ModWork.setting("buildplans-calculations")) {
@@ -425,6 +437,18 @@ public class IndustryCalculator {
 			Building building = tile.build;
 			Block block = tile.block();
 			if(building == null) continue;
+			
+			if(building instanceof BaseTurretBuild) {
+				float dps =  ((BaseTurretBuild) building).estimateDps();
+				if(block instanceof Turret) {
+					Turret turret = (Turret) block;
+					if(turret.targetAir) airDps += dps;
+					if(turret.targetGround) groundDps += dps;
+				} else {
+					airDps += dps;
+					groundDps += dps;
+				}
+			}
 
 			float craftSpeed = ModWork.getCraftSpeed(building);
 
@@ -481,6 +505,11 @@ public class IndustryCalculator {
 				liquidBalanceTotal[i] = 0;//liquidBalance[i];
 			}
 		} else {
+		}
+		
+		if(airDps != 0 || groundDps != 0) {
+			balanceFragment.element.line(Icon.modeAttack.getRegion(), "[sky]" + ModWork.round(airDps) + " air damage/sec");
+			balanceFragment.element.line(Icon.modeAttack.getRegion(), "[olive]" + ModWork.round(groundDps) + " ground damage/sec");
 		}
 
 		for (int i = 0; i < itemsBalance.length; i++) {

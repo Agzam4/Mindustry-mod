@@ -17,13 +17,14 @@ public class UiOverride {
 	}
 	
 	public static void set() {
-		if(ModWork.setting("ui.custom-chat-fragment")) {
+		if(ModWork.setting("custom-chat-fragment")) {
 			if(customChatFragment == null) customChatFragment = new CustomChatFragmentHandle();
 			Core.scene.root.removeChild(Vars.ui.chatfrag);
 			Vars.ui.chatfrag = customChatFragment;
 			Vars.ui.chatfrag.build(Core.scene.root);
 		} else {
 			if(customChatFragment != null) {
+				Core.scene.root.removeChild(customChatFragment);
 				Core.scene.root.removeChild(customChatFragment.chatfrag);
 			}
 			Core.scene.root.removeChild(Vars.ui.chatfrag);

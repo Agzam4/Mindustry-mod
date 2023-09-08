@@ -4,8 +4,10 @@ import agzam4.MyDraw;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.layout.Scl;
 import arc.struct.Seq;
+import arc.util.Nullable;
 import mindustry.ctype.UnlockableContent;
 import mindustry.ui.Fonts;
 
@@ -22,30 +24,52 @@ public class BuildTooltip implements IndustryElement {
 	}
 
 	@Override
-	public void line(String before, UnlockableContent c1, String s1, UnlockableContent c2, String s2) {
+	public void line(String before, TextureRegion c1, String s1, TextureRegion c2, String s2) {
 		if(line >= lines.size) lines.add(new OverlayLine().before(before).first(c1, s1).second(c2, s2));
 		else lines.get(line).before(before).first(c1, s1).second(c2, s2);
 		line++;
 	}
 
+	private static final @Nullable TextureRegion nullable = null;
+	
 	@Override
 	public void line(String before) {
-		line(before, null, null, null, null);
+		line(before, nullable, null, null, null);
 	}
 	
 	@Override
-	public void line(String before, UnlockableContent c1, String s1) {
+	public void line(String before, TextureRegion c1, String s1) {
 		line(before, c1, s1, null, null);
 	}
 	
 	@Override
-	public void line(UnlockableContent c1, String s1, UnlockableContent c2, String s2) {
+	public void line(TextureRegion c1, String s1, TextureRegion c2, String s2) {
 		line(null, c1, s1, c2, s2);
 	}
-	
+
+	@Override
+	public void line(TextureRegion c1, String s1) {
+		line(null, c1, s1, null, null);
+	}
+
 	@Override
 	public void line(UnlockableContent c1, String s1) {
-		line(null, c1, s1, null, null);
+		line(c1.uiIcon, s1);
+	}
+
+	@Override
+	public void line(UnlockableContent c1, String s1, UnlockableContent c2, String s2) {
+		line(c1.uiIcon, s1, c2.uiIcon, s2);
+	}
+
+	@Override
+	public void line(String before, UnlockableContent c1, String s1) {
+		line(before, c1.uiIcon, s1);
+	}
+
+	@Override
+	public void line(String before, UnlockableContent c1, String s1, UnlockableContent c2, String s2) {
+		line(before, c1.uiIcon, s1, c2.uiIcon, s2);
 	}
 
 	@Override

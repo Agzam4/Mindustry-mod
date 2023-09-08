@@ -1,21 +1,18 @@
 package agzam4.industry;
 
-import agzam4.MyDraw;
 import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
-import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
+import arc.graphics.g2d.TextureRegion;
 import arc.util.Align;
 import arc.util.Nullable;
 import arc.util.pooling.Pools;
-import mindustry.ctype.UnlockableContent;
 import mindustry.ui.Fonts;
 
 public class OverlayLine {
 
-	public @Nullable UnlockableContent firstContent, secondContent;
+	public @Nullable TextureRegion firstContent, secondContent;
 	public @Nullable String before, firstString, secondString;
 	
 	private GlyphLayout 
@@ -25,12 +22,12 @@ public class OverlayLine {
 	
 	Color color = null;
 
-	public OverlayLine first(UnlockableContent firstContent, String firstString) {
+	public OverlayLine first(TextureRegion firstContent, String firstString) {
 		this.firstContent = firstContent;
 		return firstString(firstString);
 	}
 	
-	public OverlayLine second(UnlockableContent secondContent, String secondString) {
+	public OverlayLine second(TextureRegion secondContent, String secondString) {
 		this.secondContent = secondContent;
 		return secondString(secondString);
 	}
@@ -124,11 +121,11 @@ public class OverlayLine {
 		return lineHeight()/2f;
 	}
 
-	public void drawContent(UnlockableContent content, float x, float y) {
+	public void drawContent(TextureRegion content, float x, float y) {
         Draw.blend(Blending.normal);
 		Draw.color();
-		final float width = content.uiIcon.width*contentHeight()/content.uiIcon.height;
-        Draw.rect(content.uiIcon, x + textHeight(), y + textHeight()/2f, width, contentHeight());
+		final float width = content.width*contentHeight()/content.height;
+        Draw.rect(content, x + textHeight(), y + textHeight()/2f, width, contentHeight());
         Draw.blend();
 	}
 

@@ -4,13 +4,16 @@ import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
 import arc.KeyBinds.Section;
+import arc.files.Fi;
 import arc.func.Cons;
+import arc.func.Func;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.input.InputDevice.DeviceType;
 import arc.input.KeyCode;
 import arc.math.Mathf;
+import arc.math.geom.Point2;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.ui.Dialog;
@@ -21,7 +24,6 @@ import arc.util.Log;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
-import mindustry.core.UI;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.Trigger;
@@ -32,12 +34,14 @@ import mindustry.gen.Iconc;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.meta.BuildVisibility;
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;
 import agzam4.industry.IndustryCalculator;
+import agzam4.uiOverride.CustomChatFragment;
 import agzam4.uiOverride.UiOverride;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
@@ -63,12 +67,22 @@ public class AgzamMod extends Mod {
 	
 	LoadedMod mod;
 	
+	
+	private void test() {
+//		Mods
+//		Point2.pack(pauseRandomNum, pauseRandomNum)
+//		Mathf.floor(pauseRandomNum)
+//		Fi;
+//		Point2.pack(0, 0);
+//		Point2.unpack(pauseRandomNum);
+	}
+	
+	
 	@Override
 	public void init() {
 		
 		mod = Vars.mods.getMod("agzam4mod");
 //		DesktopLauncher;
-		
 		MyFonts.load();
 		
 //		Blocks.additiveReconstructor.hasEmoji();
@@ -198,6 +212,7 @@ public class AgzamMod extends Mod {
 			
 			addCategory(table, "custom-ui");
 			addCheck(table, "custom-chat-fragment", b -> UiOverride.set());
+			addCheck(table, "outline-chat", b -> CustomChatFragment.font = b ? Fonts.outline : Fonts.def);
 			
 
 			addCategory(table, "report-bugs");
@@ -207,7 +222,7 @@ public class AgzamMod extends Mod {
 	                Core.app.setClipboardText("https://github.com/Agzam4");
 	            }
 			}).growX().pad(20).padBottom(4);
-			table.row();
+			table.row();	
 			table.button(Iconc.play + " YouTube", Styles.defaultt, () -> {
 	            if(!Core.app.openURI("https://www.youtube.com/@agzam4/")){
 	            	Vars.ui.showErrorMessage("@linkfail");

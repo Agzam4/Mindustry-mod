@@ -8,6 +8,7 @@ import static mindustry.Vars.net;
 import static mindustry.Vars.player;
 import static mindustry.Vars.ui;
 
+import agzam4.ModWork;
 import arc.Core;
 import arc.Events;
 import arc.Input.TextInput;
@@ -33,6 +34,7 @@ import mindustry.game.EventType.ClientChatEvent;
 import mindustry.gen.Call;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
+import mindustry.ui.fragments.ChatFragment;
 
 public class CustomChatFragment extends Table {
 
@@ -44,7 +46,7 @@ public class CustomChatFragment extends Table {
 	private GlyphLayout layout;
 	private Seq<String> history;
 	
-	private Font font;
+	public static Font font = Fonts.outline;
 	private float fadetime;
 	private boolean shown = false;
 	private ChatMode mode = ChatMode.normal;
@@ -56,14 +58,19 @@ public class CustomChatFragment extends Table {
 
 	public CustomChatFragment() {
 		super();
+		
+		font = ModWork.setting("outline-chat") ? Fonts.outline : Fonts.def;
+		
 		messages = Reflect.get(UiOverride.oldChatFragment, "messages");
 		chatfield = Reflect.get(UiOverride.oldChatFragment, "chatfield");
 		fieldlabel = Reflect.get(UiOverride.oldChatFragment, "fieldlabel");
 		layout = Reflect.get(UiOverride.oldChatFragment, "layout");
 		history = Reflect.get(UiOverride.oldChatFragment, "history");
 
+//		ChatFragment
+		
         setFillParent(true);
-        font = Fonts.def;
+//        font = Fonts.outline;
         
         history.insert(0, "");
         setup();
@@ -76,7 +83,6 @@ public class CustomChatFragment extends Table {
 					hide();
 				}
 			}
-
 			return net.active() && ui.hudfrag.shown;
 		});
 		
@@ -167,6 +173,7 @@ public class CustomChatFragment extends Table {
 		fieldlabel.setStyle(fieldlabel.getStyle());
 
 		chatfield = new TextField("", new TextFieldStyle(scene.getStyle(TextFieldStyle.class)));
+//		chatfield.setStyle(new TextFieldStyle(scene.getStyle(TextFieldStyle.class)));
 		chatfield.setMaxLength(Vars.maxTextLength);
 		chatfield.getStyle().background = null;
 		chatfield.getStyle().fontColor = Color.white;
