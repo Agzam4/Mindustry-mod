@@ -81,6 +81,9 @@ public class AgzamMod extends Mod {
 	@Override
 	public void init() {
 		
+//		Ref
+//		Core.
+		
 		mod = Vars.mods.getMod("agzam4mod");
 //		DesktopLauncher;
 		MyFonts.load();

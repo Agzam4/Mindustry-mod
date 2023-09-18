@@ -32,6 +32,7 @@ import arc.util.Time;
 import mindustry.Vars;
 import mindustry.game.EventType.ClientChatEvent;
 import mindustry.gen.Call;
+import mindustry.gen.Iconc;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
 import mindustry.ui.fragments.ChatFragment;
@@ -96,22 +97,25 @@ public class CustomChatFragment extends Table {
 				if(input.keyTap(Binding.chat_history_prev) && historyPos < history.size - 1){
 					if(historyPos == 0){
 						String message = chatfield.getText();
-						if(mode.prefix.isEmpty()){
-							if(!message.trim().isEmpty()){
-								history.insert(0, message);
-							}
-						}else{
-							if(message.startsWith(mode.normalizedPrefix())){
-								message = message.substring(mode.normalizedPrefix().length());
-								if(!message.trim().isEmpty()){
-									history.insert(0, message);
-								}
-							}else if(message.startsWith(mode.prefix)){
-								message = message.substring(mode.prefix.length());
-								if(!message.trim().isEmpty()){
-									history.insert(0, message);
-								}
-							}
+//						if(mode.prefix.isEmpty()){
+//							if(!message.trim().isEmpty()){
+//								history.insert(0, message);
+//							}
+//						}else{
+//							if(message.startsWith(mode.normalizedPrefix())){
+//								message = message.substring(mode.normalizedPrefix().length());
+//								if(!message.trim().isEmpty()){
+//									history.insert(0, message);
+//								}
+//							}else if(message.startsWith(mode.prefix)){
+//								message = message.substring(mode.prefix.length());
+//								if(!message.trim().isEmpty()){
+//									history.insert(0, message);
+//								}
+//							}
+//						}
+						if(!message.isEmpty()) {
+							history.insert(0, message);
 						}
 					}
 					historyPos++;
@@ -269,9 +273,9 @@ public class CustomChatFragment extends Table {
 		String message = chatfield.getText();
 		clearChatInput();
 
-		if(message.startsWith(mode.prefix)){
-			message = message.substring(mode.prefix.length());
-		}
+//		if(message.startsWith(mode.prefix)){
+//			message = message.substring(mode.prefix.length());
+//		}
 		message = message.trim();
 
 		//avoid sending empty messages
@@ -322,22 +326,35 @@ public class CustomChatFragment extends Table {
 	}
 
 	public void updateChat(){
-		chatfield.setText(mode.normalizedPrefix() + history.get(historyPos));
+		// mode.normalizedPrefix() + 
+		chatfield.setText(history.get(historyPos));
 		updateCursor();
 	}
-
-	public void nextMode(){
-		ChatMode prev = mode;
+	
+	public void nextMode() {
+//		ChatMode prev = mode;
 
 		do{
 			mode = mode.next();
 		}while(!mode.isValid());
 
-		if(chatfield.getText().startsWith(prev.normalizedPrefix())){
-			chatfield.setText(mode.normalizedPrefix() + chatfield.getText().substring(prev.normalizedPrefix().length()));
-		}else{
-			chatfield.setText(mode.normalizedPrefix());
+
+		if(mode == ChatMode.normal) {
+			fieldlabel.setText(mode.displayText);
+			fieldlabel.setColor(Color.white);
+		} else if(mode == ChatMode.team) {
+			fieldlabel.setText("<" + Iconc.players + ">");
+			fieldlabel.setColor(player.team().color);
+		} else if(mode == ChatMode.admin) {
+			fieldlabel.setText("<" + Iconc.admin + ">");
+			fieldlabel.setColor(Color.red);
 		}
+		
+//		if(chatfield.getText().startsWith(prev.normalizedPrefix())){
+//			chatfield.setText(mode.normalizedPrefix() + chatfield.getText().substring(prev.normalizedPrefix().length()));
+//		}else{
+//			chatfield.setText(mode.normalizedPrefix());
+//		}
 
 		updateCursor();
 	}
@@ -345,7 +362,7 @@ public class CustomChatFragment extends Table {
 	public void clearChatInput(){
 		historyPos = 0;
 		history.set(0, "");
-		chatfield.setText(mode.normalizedPrefix());
+		chatfield.setText("");//mode.normalizedPrefix());
 		updateCursor();
 	}
 
@@ -368,17 +385,18 @@ public class CustomChatFragment extends Table {
 	}
 
 	private enum ChatMode{
-		normal(""),
-		team("/t"),
-		admin("/a", player::admin)
+		normal("", "<" + Iconc.chat + ">"),
+		team("/t", "<" + Iconc.players + ">"),
+		admin("/a", "<" + Iconc.admin + ">")
 		;
 
-		public String prefix;
+		public String prefix, displayText;
 		public Boolp valid;
 		public static final ChatMode[] all = values();
 
-		ChatMode(String prefix){
+		ChatMode(String prefix, String displayText) {
 			this.prefix = prefix;
+			this.displayText = displayText;
 			this.valid = () -> true;
 		}
 

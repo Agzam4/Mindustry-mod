@@ -1,5 +1,6 @@
 package agzam4.utils;
 
+import static mindustry.Vars.iconMed;
 import static mindustry.Vars.tilesize;
 
 import agzam4.AgzamMod;
@@ -11,8 +12,11 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Image;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -34,6 +38,7 @@ import mindustry.type.ItemStack;
 import mindustry.type.UnitType;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.logic.LogicBlock;
@@ -527,7 +532,21 @@ public class ProcessorGenerator {
 	
 	private static Cell<TextButton> addUnitButton(Table table, UnitType type, Runnable onClick) {
 		buttonsPerRow++;
-		return table.button(type.emoji() + " " + type.localizedName, onClick).growX().pad(10).padBottom(4).fillX();
+		TextureRegionDrawable image = new TextureRegionDrawable(type.uiIcon);
+		TextButton button = new TextButton(type.localizedName);
+		if(type.uiIcon.width > type.uiIcon.height) {
+	        button.add(new Image(image)).size(20, 20 * type.uiIcon.height / type.uiIcon.width).pad(0, 0, 0, 7);
+		} else {
+	        button.add(new Image(image)).size(20 * type.uiIcon.width / type.uiIcon.height, 20).pad(0, 0, 0, 7);
+		}
+        button.getCells().reverse();
+        button.getLabelCell().expand(0, 0).fill(false);
+        button.clicked(onClick);
+        return table.add(button).growX().pad(10).padBottom(4).fillX();
+        
+//		PlacementFragment
+//		return table.button(, , 20, onClick)
+//				.growX().pad(10).padBottom(4).fillX();
 	}
 
 	private static void addCategory(Table table, String category) {
