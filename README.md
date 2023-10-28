@@ -9,4 +9,6 @@
 
 [Donate on boosty](https://boosty.to/agzam4/donate)
 
+# Thanks
 
+**GikSt**
