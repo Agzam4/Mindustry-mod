@@ -34,6 +34,10 @@ public class PlayerUtils {
             t.button(Blocks.microProcessor.emoji() + " " + ModWork.bungle("dialog.utils.processor-generator"), Styles.defaultt, () -> {
             			ProcessorGenerator.show();
             }).growX().pad(10).padBottom(4).wrapLabel(false).row();
+
+            t.button(Blocks.logicDisplay.emoji() + " " + ModWork.bungle("dialog.utils.display-generator"), Styles.defaultt, () -> {
+            	DisplayGenerator.show();
+            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
             
 //            if(Vars.mobile)
             t.button("@back", Styles.defaultt, () -> {

@@ -37,6 +37,7 @@ import mindustry.mod.Mods.LoadedMod;
 import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
+import mindustry.world.Build;
 import mindustry.world.meta.BuildVisibility;
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;

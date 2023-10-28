@@ -385,7 +385,7 @@ public class CustomChatFragment extends Table {
 	}
 
 	private enum ChatMode{
-		normal("", "<" + Iconc.chat + ">"),
+		normal("", ">"), // "<" + Iconc.chat + ">"
 		team("/t", "<" + Iconc.players + ">"),
 		admin("/a", "<" + Iconc.admin + ">")
 		;

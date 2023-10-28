@@ -446,7 +446,7 @@ public class ProcessorGenerator {
 	}
 
 	private static void addCode(String code, String comment, Seq<LogicLink> links) {
-		Vars.control.input.useSchematic(createBuildPlan(code, comment, links));		
+		Vars.control.input.useSchematic(Code.createBuildPlan(code, comment, links, generateComment));		
 	}
 
 	private static String createMineCode(UnitType type) {
@@ -507,15 +507,6 @@ public class ProcessorGenerator {
 		return _code;
 	}
 
-	private static Schematic createBuildPlan(String code, String comment, Seq<LogicLink> links) {
-		Seq<Stile> seq = new Seq<Schematic.Stile>();
-		seq.add(new Stile(Blocks.microProcessor, 0, 0, LogicBlock.compress(code, links), (byte) 0));
-		if(generateComment) {
-			seq.add(new Stile(Blocks.message, 0, 1, comment, (byte) 0));
-		}
-		return new Schematic(seq, new StringMap(), 1, generateComment  ? 2 : 1);
-	}
-
 	private static Tile to = null;
 	private static UnitType carrier = null;
 	
@@ -554,167 +545,4 @@ public class ProcessorGenerator {
 		table.image().color(Pal.accent).fillX().height(3).pad(6).colspan(4).padTop(0).padBottom(10).growX().row();		
 	}
 
-	
-	
-	static class Code {
-		
-		Seq<String> code = new Seq<String>();
-		Seq<String> marks = new Seq<String>();
-		ObjectMap<Integer, String> jumps = new ObjectMap<>();
-		ObjectMap<Integer, Integer> dJumps = new ObjectMap<>();
-		
-		UnitType type;
-		
-		public void ubind(UnitType type) {
-			this.type = type;
-			line("ubind @" + type.name);
-		}
-
-		public void uSetFlag(int flag) {
-			line("ucontrol flag " + flag + " 0 0 0 0");
-		}
-
-		public void uFlag(String var) {
-			line("sensor " + var + " @unit @flag");
-		}
-
-		public void sum(String result, String a, String b) {
-			line("op add " + result + " " + a + " " + b);	
-		}
-
-		public void getLink(String var, int i) {
-			line("getlink " + var + " " + i);			
-		}
-
-		public void takeItems(String build, String items) {
-			line("ucontrol itemTake " + build + " " + items + " #ItemsCapacity 0 0");
-		}
-
-		public void dropItems(String build) {
-			line("ucontrol itemDrop " + build + " #Items 0 0 0");
-		}
-
-		public void getBlock(Tile tile) {
-			line("ucontrol getBlock " + tile.centerX() + " " + tile.centerY() + " #Type #Building #Floor");
-		}
-
-		public void uSensorItems(String var) {
-			line("sensor " + var + " @unit @firstItem");
-		}
-		public void uSensorItem(String var, Item item) {
-			line("sensor " + var + " @unit @" + item.name);
-		}
-
-		public void approachAndMine() {
-			line("ucontrol approach #OreX #OreY 5 0 0");
-			line("ucontrol mine #OreX #OreY 5 0 0");
-		}
-
-		public void ulocateOre(String ore) {
-			line("ulocate ore core true " + ore + " #OreX #OreY #Found building");
-		}
-
-		public void set(String var, String value) {
-			line("set " + var + " " + value);
-		}
-		
-		public void set(String var, Item item) {
-			set(var, "@" + item.name);
-		}
-
-		public void sensorItems(String var, String from, Item item) {
-			line("sensor " + var + " " + from + " @" + item.name);
-		}
-		
-		public void sensorAmmo(String var, String from) {
-			line("sensor " + var + " " + from + " @ammo");
-		}
-		
-		public void sensorItems(String var, Item item) {
-			line("sensor " + var + " #Core @" + item.name);
-		}
-
-		public void boost(boolean b) {
-			line("ucontrol boost " + (b ? 1 : 0) + " 0 0 0 0");
-		}
-
-		public void end() {
-			line("end");
-		}
-
-		public void itemDrop(String string) {
-			line("ucontrol itemDrop " + string + " #Items 0 0 0");
-		}
-
-		public void approachToCore() {
-			if(type.flying) line("ucontrol approach #CoreX #CoreY 5 0 0");
-			else pathfindToCore();
-		}
-
-		public void pathfindToCore() {
-			line("ucontrol pathfind #CoreX #CoreY 0 0 0");
-		}
-		
-		public void approachTo(int x, int y) {
-			if(type.flying) line("ucontrol approach " + x + " " + y + " 3 0 0");
-			else pathfindTo(x, y);
-		}
-		
-		public void pathfindTo(int x, int y) {
-			line("ucontrol pathfind " + x + " " + y + " 0 0 0");
-		}
-
-
-		public void jump(String condition, String line) {
-			jumps.put(marks.size, line);
-			line("jump @line " + condition);
-		}
-
-		public void jump(String condition, int change) {
-			dJumps.put(marks.size, change);
-			line("jump @line " + condition);
-		}
-
-		public void uItemStack() {
-			line("sensor #Items @unit @totalItems");
-			line("sensor #ItemsCapacity @unit @itemCapacity");
-		}
-
-		private void ulocateCore() {
-			line("ulocate building core 0 @copper #CoreX #CoreY #Found #Core");
-		}
-		
-		private void line(String line) {
-			code.add(line);
-//			code.append(line);
-//			code.append('\n');
-			marks.add("line#" + marks.size);
-		}
-		
-		public void markLast(String mark) {
-			marks.set(marks.size-1, mark);
-		}
-		
-		@Override
-		public String toString() {
-			StringBuilder codeBuilder = new StringBuilder();
-			Log.info(jumps);
-			Log.info(dJumps);
-			for (int i = 0; i < code.size; i++) {
-				String line = code.get(i).replaceAll("#", "agzamMod"); // Need to other modifications can recognize my mod's code 
-				String jumpMark = jumps.get(i);
-				Integer dJumpMark = dJumps.get(i);
-				if(jumpMark != null) line = line.replaceFirst("@line", "" + getLine(jumpMark));
-				else if(dJumpMark != null) line = line.replaceFirst("@line", "" + (i+dJumpMark.intValue()));
-				codeBuilder.append(line);
-				codeBuilder.append('\n');
-			}
-			return codeBuilder.toString();
-		}
-		
-		
-		public int getLine(String mark) {
-			return marks.indexOf(mark);
-		}
-	}
 }
