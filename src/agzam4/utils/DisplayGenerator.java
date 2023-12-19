@@ -6,11 +6,12 @@ import arc.graphics.Pixmap;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.struct.StringMap;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.game.Schematic;
 import mindustry.game.Schematic.Stile;
+import mindustry.maps.Maps;
+import mindustry.maps.Maps.ShuffleMode;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.world.blocks.logic.LogicBlock;
@@ -55,7 +56,6 @@ public class DisplayGenerator {
 	        		PlayerUtils.hide();
 	            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
 			});
-			
 			dialog.show();
 		}, "png", "jpg", "jpeg");
 	}
@@ -162,7 +162,7 @@ public class DisplayGenerator {
 //				"agzamMod-delivery-autolink", false);
 	}
 	
-	private static void addCode(String code, String comment, Seq<LogicLink> links) {
-		Vars.control.input.useSchematic(Code.createBuildPlan(code, comment, links, true));		
-	}
+//	private static void addCode(String code, String comment, Seq<LogicLink> links) {
+//		Vars.control.input.useSchematic(Code.createBuildPlan(code, comment, links, true));		
+//	}
 }

@@ -1,10 +1,8 @@
 package agzam4.utils;
 
-import arc.graphics.Color;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.struct.StringMap;
-import arc.util.Log;
 import mindustry.content.Blocks;
 import mindustry.game.Schematic;
 import mindustry.game.Schematic.Stile;
@@ -130,8 +128,20 @@ public class Code {
 		line("draw color " + r + " " + g + " " + b + " " + a + " 0 0");
 	}
 
+	public void color(int r, int g, int b, int a) {
+		line("draw color " + r + " " + g + " " + b + " " + a + " 0 0");
+	}
+	
+	public void drawClear(int r, int g, int b, int a) {
+		line("draw clear " + r + " " + g + " " + b + " " + a + " 0 0");
+	}
+
 	public void drawRect(int x, int y, int w, int h) {
 		line("draw rect " + x + " " + y + " " + w + " " + h + " 0 0");
+	}
+
+	public void drawTriangle(int[] xs, int[] ys) {
+		line("draw triangle " + xs[0] + " " + ys[0] + " " + xs[1] + " " + ys[1] + " " + xs[2] + " " + ys[2]);
 	}
 
 	public void drawflush(String display) {

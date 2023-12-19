@@ -4,10 +4,8 @@ import static agzam4.ModWork.bs;
 import static agzam4.ModWork.gs;
 import static agzam4.ModWork.rs;
 
-import agzam4.CursorTracker;
 import agzam4.ModWork;
 import agzam4.MyDraw;
-import agzam4.UnitTextures;
 import agzam4.ModWork.KeyBinds;
 import arc.Core;
 import arc.Events;
@@ -23,12 +21,11 @@ import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.util.Align;
-import arc.util.Log;
 import arc.util.Nullable;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.core.World;
-import mindustry.ctype.UnlockableContent;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
 import mindustry.game.EventType.WorldLoadEndEvent;
@@ -36,16 +33,16 @@ import mindustry.gen.Building;
 import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Layer;
-import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Fonts;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.defense.turrets.BaseTurret;
 import mindustry.world.blocks.defense.turrets.BaseTurret.BaseTurretBuild;
-import mindustry.world.blocks.defense.turrets.ItemTurret;
+import mindustry.world.blocks.defense.turrets.ReloadTurret;
+import mindustry.world.blocks.defense.turrets.ReloadTurret.ReloadTurretBuild;
 import mindustry.world.blocks.defense.turrets.Turret;
-import mindustry.world.blocks.defense.turrets.Turret.TurretBuild;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.GenericCrafter;
 import mindustry.world.blocks.production.Pump;
@@ -438,8 +435,25 @@ public class IndustryCalculator {
 			Block block = tile.block();
 			if(building == null) continue;
 			
-			if(building instanceof BaseTurretBuild) {
-				float dps =  ((BaseTurretBuild) building).estimateDps();
+			if(building instanceof BaseTurretBuild && block instanceof BaseTurret) {
+				BaseTurretBuild baseTurretBuild = (BaseTurretBuild) building;
+				float dps = baseTurretBuild.estimateDps();
+				BaseTurret baseTurret = (BaseTurret) block;
+				if(baseTurret.coolant != null && block instanceof ReloadTurret && building.liquids() != null) {
+					Liquid liquid = building.liquids().current();
+					if(building.liquids.get(liquid) > 0.01f) {
+						ReloadTurret reloadTurret = (ReloadTurret) block;
+						float reload = reloadTurret.reload;
+						float maxUsed = baseTurret.coolant.amount;
+						float multiplier = baseTurret.coolantMultiplier;
+						
+						// reload, coolant.amount, coolantMultiplier
+	                    float reloadRate = 1f + maxUsed * multiplier * liquid.heatCapacity;
+	                    float standardReload = reload;
+	                    float result = standardReload / (reload / reloadRate);
+						dps *= result;//efficiency(building);
+					}
+				}
 				if(block instanceof Turret) {
 					Turret turret = (Turret) block;
 					if(turret.targetAir) airDps += dps;
@@ -786,9 +800,9 @@ public class IndustryCalculator {
 	    
 	    String text = "";
 	    
-	    private void setText(String text) {
-	    	this.text = text;
-		}
+//	    private void setText(String text) {
+//	    	this.text = text;
+//		}
 	    
 		@Override
 		public void draw() {

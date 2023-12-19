@@ -12,8 +12,11 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Scaling;
+import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.core.GameState.State;
 import mindustry.ctype.UnlockableContent;
+import mindustry.game.Gamemode;
 import mindustry.graphics.Pixelator;
 import mindustry.mod.Mods;
 import mindustry.ui.Fonts;
@@ -44,7 +47,7 @@ public class MyFonts {
 			createEmoji(region, name, ch);
 			return ch;
 		}
-		return ' ';
+        return ' ';
 	}
 	
 	public static void createEmoji(TextureRegion region, String name, int ch) {

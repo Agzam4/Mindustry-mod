@@ -35,7 +35,6 @@ import mindustry.gen.Call;
 import mindustry.gen.Iconc;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
-import mindustry.ui.fragments.ChatFragment;
 
 public class CustomChatFragment extends Table {
 

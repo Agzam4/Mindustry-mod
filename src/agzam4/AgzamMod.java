@@ -4,10 +4,14 @@ import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
 import arc.KeyBinds.Section;
+import arc.audio.Sound;
 import arc.files.Fi;
 import arc.func.Cons;
+import arc.func.Cons2;
 import arc.func.Func;
 import arc.graphics.Color;
+import arc.graphics.Texture;
+import arc.graphics.g2d.Animation;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.input.InputDevice.DeviceType;
@@ -21,9 +25,13 @@ import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
+import arc.util.Nullable;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.content.UnitTypes;
+import mindustry.game.Team;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.Trigger;
@@ -31,7 +39,10 @@ import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Call;
 import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
+import mindustry.gen.Sounds;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
+import mindustry.maps.Maps.ShuffleMode;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
 import mindustry.ui.Fonts;
@@ -39,6 +50,9 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
 import mindustry.world.Build;
 import mindustry.world.meta.BuildVisibility;
+
+import java.util.Locale;
+
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;
 import agzam4.industry.IndustryCalculator;
@@ -70,17 +84,25 @@ public class AgzamMod extends Mod {
 	
 	
 	private void test() {
+//		Vars.state.rules.waveSending
+//		Texture texture = new Texture();
+//		UnitTypes.evoke.region = new TextureRegion(null)
+//		Fi.get(pingText).exists()
 //		Mods
 //		Point2.pack(pauseRandomNum, pauseRandomNum)
 //		Mathf.floor(pauseRandomNum)
 //		Fi;
 //		Point2.pack(0, 0);
 //		Point2.unpack(pauseRandomNum);
+//		Team.sharded.data().getUnits(null)
+		
+//		Vars.state.rules.bannedBlocks.add(Blocks.thoriumReactor)
 	}
 	
 	
 	@Override
 	public void init() {
+		
 		
 //		Ref
 //		Core.
@@ -112,7 +134,7 @@ public class AgzamMod extends Mod {
 			PlayerUtils.build();
 		try {
 			try {
-				MyTray.avalible = MyTray.avalible();
+				Awt.avalible = Awt.avalible();
 			} catch (Error e) {
 
 			} 
@@ -192,7 +214,7 @@ public class AgzamMod extends Mod {
 			
 			try {
 				afkAvalible = true;
-				if(MyTray.avalible && !Vars.mobile) {
+				if(Awt.avalible && !Vars.mobile) {
 					table.field(getCustomAfk(), t -> {
 						Core.settings.put("agzam4mod.afk-start", t);
 					}).tooltip(ModWork.bungle("afk.automessage-start-tooltip")).width(Core.scene.getWidth()/2f).row();
@@ -268,7 +290,7 @@ public class AgzamMod extends Mod {
 		
 		Events.on(PlayerChatEvent.class, e -> {
 			if(!afkAvalible) return;
-			if(!MyTray.avalible) return;
+			if(!Awt.avalible) return;
 			if(!ModWork.setting("afk-ping")) return;
 			if(e.message == null) return;
 			if(!isPaused) return;
@@ -283,7 +305,7 @@ public class AgzamMod extends Mod {
 				if(msg.startsWith(pingText)) {
 					msg = msg.substring(pingText.length());
 					createPingText(stripName);
-					MyTray.message(Strings.stripColors(e.player.name()) + ": " + msg);
+					Awt.message(Strings.stripColors(e.player.name()) + ": " + msg);
 			        Call.sendChatMessage("[lightgray]" + ModWork.bungle("afk.message-send"));
 					return;
 				}

@@ -1,8 +1,5 @@
 package agzam4.utils;
 
-import static mindustry.Vars.iconMed;
-import static mindustry.Vars.tilesize;
-
 import agzam4.AgzamMod;
 import agzam4.ModWork;
 import agzam4.MyDraw;
@@ -16,19 +13,14 @@ import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
-import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.struct.StringMap;
 import arc.util.Log;
 import arc.util.Nullable;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.BlockBuildEndEvent;
 import mindustry.game.EventType.TapEvent;
-import mindustry.game.Schematic;
-import mindustry.game.Schematic.Stile;
 import mindustry.gen.Building;
 import mindustry.gen.Call;
 import mindustry.graphics.Layer;
@@ -38,7 +30,6 @@ import mindustry.type.ItemStack;
 import mindustry.type.UnitType;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.logic.LogicBlock;
@@ -48,6 +39,10 @@ import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 
 public class ProcessorGenerator {
+	
+	// TODO: many rows/small checkboxes
+	// TODO: remove all select by button
+	// TODO: hide hidden items but show they by button
 
 	private static BaseDialog dialog;
 	
@@ -217,7 +212,7 @@ public class ProcessorGenerator {
 					Log.info("Selecting delivery");
 					to = null;
 					hide();
-				}).wrapLabel(false).tooltip("[accent]" + ModWork.round(u.itemCapacity*u.boostMultiplier*u.speed*.6f/tilesize) + "[white] items/sec on 100 tiles");
+				}).wrapLabel(false).tooltip("[accent]" + ModWork.round(u.itemCapacity*u.boostMultiplier*u.speed*.6f/Vars.tilesize) + "[white] items/sec on 100 tiles");
 				//.row();
 				
 				if(buttonsPerRow >= 3) {
@@ -460,7 +455,8 @@ public class ProcessorGenerator {
 		
 		Seq<Item> ores = new Seq<>();
 		for (int i = 0; i < needOre.length; i++) {
-			if(needOre[i]) ores.add(Vars.content.item(i));
+			Item item = Vars.content.item(i);
+			if(needOre[i] && type.mineTier >= item.hardness) ores.add(item);
 		}
 		if(ores.size <= 0) return "";
 
