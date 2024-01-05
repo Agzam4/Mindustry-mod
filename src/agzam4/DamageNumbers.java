@@ -9,6 +9,7 @@ import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.struct.Seq;
 import arc.util.Align;
+import mindustry.Vars;
 import mindustry.content.StatusEffects;
 import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Groups;
@@ -111,45 +112,33 @@ public class DamageNumbers {
 			
 			float change = 0;
 			if(unit.health+unit.shield == lastHealth) {
-//				hTime = 0;
 				if(elapsed != 0 && dmg != 0) {
 					dps = dmg/elapsed;
 				}
-				elapsed = 0;
 				dmg = 0;
+				elapsed = 0;
 			} else {
 				change = unit.health+unit.shield-lastHealth;
 				if(change > 0) {
 					if(hColor < 100) hColor+=10;
-//					health += change;
 				} else {
 					if(hColor > -100) hColor-=10;
-//					damage -= change;
 				}
 				hTime = 60*2;
 				hScale = 1.5f;
-				lastHealth = unit.health+unit.shield;
+				dmg-=change;
+				elapsed++;
 			}
+			lastHealth = unit.health+unit.shield;
 			
-			dmg-=change;
-			elapsed++;
 			if(elapsed > 60) {
 				if(dmg != 0) {
 					dps = dmg/elapsed;
-//					if(change == 0) {
-						dmg = 0;
-						elapsed = 0;
-//					}
+					dmg = 0;
+					elapsed = 0;
 				}
 			}
 
-//			if(dTime > 0) {
-//				dTime--;
-//				if(dTime < 110)
-//				dScale = (dScale - 1)/1.2f + 1;
-//			} else {
-//				dScale = dScale/1.5f;
-//			}
 			float cursorX = Core.input.mouseWorldX();
 			float cursorY = Core.input.mouseWorldY();
 			
@@ -186,7 +175,7 @@ public class DamageNumbers {
 							unit.getX(), unit.getY()+unit.hitSize/2,
 							1f, .9f, .5f, hScale, Align.left);
 				} else {
-					MyDraw.textColor(" " + roundSimple(unit.health), 
+					MyDraw.textColor(" " + roundSimple(unit.health*unit.team.rules().unitHealthMultiplier*Vars.state.rules.unitHealthMultiplier), 
 							unit.getX(), unit.getY()+unit.hitSize/2,
 							rs[index], gs[index], bs[index], hScale, Align.left);
 				}
@@ -198,7 +187,7 @@ public class DamageNumbers {
 							hScale, Align.right);
 				} else {
 					boolean a = dps > 0;
-					MyDraw.textColor((a ? "" : "+") + roundSimple(Math.abs(dps)) + " ", 
+					MyDraw.textColor((a ? "" : "+") + roundSimple(Math.abs(dps*unit.team.rules().unitHealthMultiplier*Vars.state.rules.unitHealthMultiplier)) + " ", 
 							unit.getX(), unit.getY()+unit.hitSize/2f,
 							a ? 1f : .2f,
 							a ? .2f : .8f,		
@@ -209,6 +198,7 @@ public class DamageNumbers {
 						1f, 1f, 1f, hScale, Align.center);
 			} else {
 				dps = 0;
+				elapsed = 0;
 			}
 			
 //			if(dScale > 0.1f && damage != 0) {
@@ -221,6 +211,7 @@ public class DamageNumbers {
 //			}
 		}
 	}
+
 	
 	/*
 	private static float t(final float value, final float from, final float to) {

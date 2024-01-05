@@ -113,8 +113,9 @@ public class IndustryCalculator {
 		Building building = tile.build;
 //		if(building.team != Vars.player.team()) return;
 
-		float health = building.health();
-		float maxHealth = building.maxHealth();
+		float multiplier = Vars.state.rules.blockHealthMultiplier*building.team.rules().blockHealthMultiplier;
+		float health = building.health()*multiplier;
+		float maxHealth = building.maxHealth()*multiplier;
 		
 		int index = ModWork.getGradientIndex(health, maxHealth);
 		
@@ -454,6 +455,7 @@ public class IndustryCalculator {
 						dps *= result;//efficiency(building);
 					}
 				}
+				dps *= building.team().rules().blockDamageMultiplier*Vars.state.rules.blockDamageMultiplier;
 				if(block instanceof Turret) {
 					Turret turret = (Turret) block;
 					if(turret.targetAir) airDps += dps;

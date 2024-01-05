@@ -267,9 +267,13 @@ public class AgzamMod extends Mod {
 		Events.run(Trigger.update, () -> {
 			updates++;
 			IndustryCalculator.update();
-			if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
-				if(Vars.player.unit() != null) {
+//			DamageNumbers.update();
+			if(Vars.player.unit() != null) {
+				if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
 					Vars.player.unit().vel.scl(.5f);
+				}
+				if(lockUnit) {
+					Vars.player.unit().vel.scl(0);
 				}
 			}
 		});
@@ -294,6 +298,8 @@ public class AgzamMod extends Mod {
 			if(!ModWork.setting("afk-ping")) return;
 			if(e.message == null) return;
 			if(!isPaused) return;
+			if(e.player == null) return;
+			if(Vars.player == null) return;
 			if(e.player.plainName().equals(Vars.player.plainName())) return;
 
 			String stripName = ModWork.strip(Vars.player.name).replaceAll(" ", "_");
@@ -518,4 +524,10 @@ public class AgzamMod extends Mod {
 	}
 	//  Core.settings.put("agzam4mod-units.settings.hideUnitsHotkey", new java.lang.Integer(75))
 	// Core.settings.getInt("agzam4mod-units.settings.hideUnitsHotkey", KeyCode.h.ordinal())
+
+	static boolean lockUnit = false;
+	
+	public static void lockUnit(boolean b) {
+		lockUnit = b;
+	}
 }

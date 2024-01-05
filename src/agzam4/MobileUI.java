@@ -99,7 +99,8 @@ public class MobileUI {
 		
 		applyStyle(container.button(Iconc.wrench + "", buttonsStyle, PlayerUtils::show)).row();
 
-		toggle(container, Iconc.units, b -> AgzamMod.hideUnits(b)).row();
+		toggle(container, Iconc.units, b -> AgzamMod.hideUnits(b));
+		toggle(container, Iconc.lock, b -> AgzamMod.lockUnit(b)).row();
 		
 		toggle(container, Iconc.book, b -> KeyBinds.selection.isDown = b); // paste
 		applyStyle(container.button(Iconc.cancel+"", buttonsStyle, IndustryCalculator::clearSelection));
