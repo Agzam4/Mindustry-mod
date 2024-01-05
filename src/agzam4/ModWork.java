@@ -602,6 +602,18 @@ public class ModWork {
         		&& !Vars.ui.research.isShown()
         		&& Core.scene.getKeyboardFocus() == null;
 	}
+	
+
+	public static boolean acceptKeyNoFocus() {
+		return !Vars.state.isMenu() 
+        		&& !Vars.ui.chatfrag.shown() 
+        		&& !Vars.ui.schematics.isShown() 
+        		&& !Vars.ui.database.isShown() 
+        		&& !Vars.ui.consolefrag.shown() 
+        		&& !Vars.ui.content.isShown()
+        		&& !Vars.ui.logic.isShown()
+        		&& !Vars.ui.research.isShown();
+	}
 
 	public static int getMaximumAccepted(Block block, Item item) {
 		return block.newBuilding().getMaximumAccepted(item);

@@ -1,9 +1,12 @@
 package agzam4.uiOverride;
 
 import arc.scene.Group;
+import arc.struct.Seq;
 import mindustry.ui.fragments.ChatFragment;
 
 public class CustomChatFragmentHandle extends ChatFragment {
+
+	private Seq<String> history = new Seq<>(); // some other mods compatibility
 	
 	public CustomChatFragment chatfrag;
 	

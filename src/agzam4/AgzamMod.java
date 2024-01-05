@@ -34,6 +34,7 @@ import mindustry.content.UnitTypes;
 import mindustry.game.Team;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
+import mindustry.game.EventType.TapEvent;
 import mindustry.game.EventType.Trigger;
 import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Call;
@@ -60,6 +61,7 @@ import agzam4.uiOverride.CustomChatFragment;
 import agzam4.uiOverride.UiOverride;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
+import agzam4.utils.UnitSpawner;
 
 public class AgzamMod extends Mod {
 
@@ -263,6 +265,13 @@ public class AgzamMod extends Mod {
 		} else {
 			Vars.ui.settings.addCategory(ModWork.bungle("settings.name"), Icon.wrench, builder);
 		}
+
+		Events.on(TapEvent.class, e -> {
+			if(e == null) return;
+			if(e.player == null) return;
+			if(e.tile == null) return;
+			UnitSpawner.ontap(e);
+		});
 		
 		Events.run(Trigger.update, () -> {
 			updates++;
