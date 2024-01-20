@@ -1,11 +1,14 @@
 package agzam4.uiOverride;
 
 import arc.scene.Group;
+import arc.struct.Seq;
 import mindustry.ui.fragments.ConsoleFragment;
 
 public class CustomConsoleFragmentHandle extends ConsoleFragment {
 
-	public CustomConsoleFragment consolefrag;
+	public CustomConsoleFragment consolefrag; 
+	
+	public Seq<String> history = new Seq<>(), messages = new Seq<>(); // for compatibility with other mods
 	
 	public CustomConsoleFragmentHandle() {
 		super();

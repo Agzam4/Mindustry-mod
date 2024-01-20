@@ -59,6 +59,7 @@ import agzam4.debug.Debug;
 import agzam4.industry.IndustryCalculator;
 import agzam4.uiOverride.CustomChatFragment;
 import agzam4.uiOverride.UiOverride;
+import agzam4.utils.PlayerAI;
 import agzam4.utils.PlayerUtils;
 import agzam4.utils.ProcessorGenerator;
 import agzam4.utils.UnitSpawner;
@@ -112,6 +113,7 @@ public class AgzamMod extends Mod {
 		mod = Vars.mods.getMod("agzam4mod");
 //		DesktopLauncher;
 		MyFonts.load();
+		MyIndexer.init();
 		
 //		Blocks.additiveReconstructor.hasEmoji();
 		
@@ -276,6 +278,7 @@ public class AgzamMod extends Mod {
 		Events.run(Trigger.update, () -> {
 			updates++;
 			IndustryCalculator.update();
+			PlayerAI.updatePlayer();
 //			DamageNumbers.update();
 			if(Vars.player.unit() != null) {
 				if(Core.input.keyDown(KeyBinds.slowMovement.key)) {

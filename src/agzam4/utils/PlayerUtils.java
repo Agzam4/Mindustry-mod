@@ -5,6 +5,7 @@ import arc.graphics.Color;
 import arc.scene.ui.layout.Table;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.UnitTypes;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 
@@ -22,7 +23,7 @@ public class PlayerUtils {
 		utilsDialog.closeOnBack();
 //		utilsDialog.defaults().left().pad(3f);
 //		PlayerListFragment
-
+		
 		utilsDialog.cont.pane(p -> {
 //            t.defaults().left().pad(3f);
 
@@ -39,14 +40,18 @@ public class PlayerUtils {
             	DisplayGenerator.show();
             }).growX().pad(10).padBottom(4).wrapLabel(false).row();
 
-            t.button(Blocks.logicDisplay.emoji() + " [lime]" + ModWork.bungle("dialog.utils.display-generator"), Styles.defaultt, () -> {
-            	DisplayGeneratorTriangular.show();
-            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
+//            t.button(Blocks.logicDisplay.emoji() + " [lime]" + ModWork.bungle("dialog.utils.display-generator"), Styles.defaultt, () -> {
+//            	DisplayGeneratorTriangular.show();
+//            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
             
-//            if(Vars.net) TODO
             t.button(Blocks.payloadSource.emoji() + " " + ModWork.bungle("dialog.utils.unit-spawn"), Styles.defaultt, () -> {
             	UnitSpawner.show();
-            }).growX().pad(10).padBottom(4).wrapLabel(false).row();
+            }).growX().pad(10).padBottom(4).wrapLabel(false).disabled(b -> (ModWork.isNetGame() && Vars.net.client()))
+            .row();
+            
+            
+            t.check(UnitTypes.mono.emoji() + " " + ModWork.bungle("dialog.utils.player-ai"), PlayerAI.enabled, b -> PlayerAI.enabled = b)
+            .growX().pad(10).padBottom(4).wrapLabel(false).row();
 
 //            t.button("Debug", Styles.defaultt, () -> {
 //            	GifTestDrive.show();

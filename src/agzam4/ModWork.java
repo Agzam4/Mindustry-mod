@@ -380,7 +380,7 @@ public class ModWork {
 			if(separator.results != null) {
 				for (int i = 0; i < separator.results.length; i++) {
 					ItemStack output = separator.results[i];
-					cons.get(output.item, craftSpeed*output.amount*building.timeScale());
+					cons.get(output.item, craftSpeed*output.amount*building.timeScale()/separator.results.length);
 				}
 			}
 		}
@@ -456,7 +456,7 @@ public class ModWork {
 			if(separator.results != null) {
 				for (int i = 0; i < separator.results.length; i++) {
 					ItemStack output = separator.results[i];
-					itemCons.get(output.item, craftSpeed*output.amount);
+					itemCons.get(output.item, craftSpeed*output.amount/separator.results.length);
 				}
 			}
 		}
@@ -658,6 +658,10 @@ public class ModWork {
 	public static boolean hasKeyBoard() {
 		if(Vars.mobile) return Core.input.useKeyboard();
 		return true;
+	}
+
+	public static boolean isNetGame() {
+		return Vars.net.active();
 	}
 
 

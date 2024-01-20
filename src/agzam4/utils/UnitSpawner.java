@@ -115,7 +115,7 @@ public class UnitSpawner {
 		return cell.width(50).height(50).margin(0).pad(0);
 	}
 	
-	static boolean visible = true;
+	static boolean visible = false;
 
 	public static void show() {
 		PlayerUtils.hide();
@@ -129,6 +129,7 @@ public class UnitSpawner {
 	public static void ontap(TapEvent e) {
 		if(!visible) return;
 		if(selected == null) return;
+		if(ModWork.isNetGame() && Vars.net.client()) return;
 		if(e.player != Vars.player) return;
 		Team t = team == null ? e.player.team() : team;
 		if(selected instanceof UnitType) {
@@ -136,7 +137,7 @@ public class UnitSpawner {
 			ut.spawn(e.tile, t);
 		}
 		if(selected instanceof Block) {
-			e.tile.setBlock((Block) selected, t);
+			e.tile.setNet((Block) selected, t, 0);
 		}
 	}
 
