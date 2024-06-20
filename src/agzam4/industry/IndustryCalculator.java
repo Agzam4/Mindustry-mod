@@ -24,7 +24,6 @@ import arc.util.Align;
 import arc.util.Nullable;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
-import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.TileChangeEvent;
@@ -33,6 +32,7 @@ import mindustry.gen.Building;
 import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Fonts;
@@ -41,7 +41,6 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.BaseTurret;
 import mindustry.world.blocks.defense.turrets.BaseTurret.BaseTurretBuild;
 import mindustry.world.blocks.defense.turrets.ReloadTurret;
-import mindustry.world.blocks.defense.turrets.ReloadTurret.ReloadTurretBuild;
 import mindustry.world.blocks.defense.turrets.Turret;
 import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.production.GenericCrafter;
@@ -321,6 +320,7 @@ public class IndustryCalculator {
 
 	private static float airDps = 0;
 	private static float groundDps = 0;
+	private static float power = 0;
 
 	static Seq<Tile> selected_ = new Seq<>();
 	
@@ -349,6 +349,7 @@ public class IndustryCalculator {
 
 		airDps = 0;
 		groundDps = 0;
+		power = 0;
 
 		boolean buildPlans = false;
 		if(ModWork.setting("buildplans-calculations")) {
@@ -363,11 +364,13 @@ public class IndustryCalculator {
 							ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 									buildPlan.config, craftSpeed, 
 									(item, ips) -> itemsBalance[item.id] -= ips,
-									(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+									(liquid, lps) -> liquidBalance[liquid.id] -= lps,
+									(pps) -> power -= pps);
 							ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 									buildPlan.config, craftSpeed, 
 									(item, ips) -> itemsBalance[item.id] += ips,
-									(liquid, lps) -> liquidBalance[liquid.id] += lps);
+									(liquid, lps) -> liquidBalance[liquid.id] += lps,
+									(pps) -> power += pps);
 						}
 						
 						buildPlans = true;
@@ -383,11 +386,13 @@ public class IndustryCalculator {
 					ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 							buildPlan.config, craftSpeed, 
 							(item, ips) -> itemsBalance[item.id] -= ips,
-							(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+							(liquid, lps) -> liquidBalance[liquid.id] -= lps,
+							(pps) -> power -= pps);
 					ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 							buildPlan.config, craftSpeed, 
 							(item, ips) -> itemsBalance[item.id] += ips,
-							(liquid, lps) -> liquidBalance[liquid.id] += lps);
+							(liquid, lps) -> liquidBalance[liquid.id] += lps,
+							(pps) -> power += pps);
 				}
 				buildPlans = true;
 			}
@@ -401,11 +406,13 @@ public class IndustryCalculator {
 					ModWork.consumeBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 							buildPlan.config, craftSpeed, 
 							(item, ips) -> itemsBalance[item.id] -= ips,
-							(liquid, lps) -> liquidBalance[liquid.id] -= lps);
+							(liquid, lps) -> liquidBalance[liquid.id] -= lps,
+							(pps) -> power -= pps);
 					ModWork.produceBlock(buildPlan.block, buildPlan.x, buildPlan.y, 
 							buildPlan.config, craftSpeed, 
 							(item, ips) -> itemsBalance[item.id] += ips,
-							(liquid, lps) -> liquidBalance[liquid.id] += lps);
+							(liquid, lps) -> liquidBalance[liquid.id] += lps,
+							(pps) -> power += pps);
 				}
 				buildPlans = true;
 			}
@@ -488,9 +495,13 @@ public class IndustryCalculator {
 					}
 				}
 			});
-			
+
 			ModWork.produceLiquids(building, craftSpeed, (liquid, lps) -> {
 				liquidBalance[liquid.id] += lps;
+			});
+
+			ModWork.producePower(building, craftSpeed, (pps) -> {
+				power += pps;
 			});
 			
 			for (int c = 0; c < block.consumers.length; c++) {
@@ -500,6 +511,9 @@ public class IndustryCalculator {
 				});
 				ModWork.consumeLiquids(consume, building, craftSpeed, (liquid, lps) -> {
 					liquidBalance[liquid.id] -= lps;
+				});
+				ModWork.consumePower(consume, building, craftSpeed, (pps) -> {
+					power -= pps;
 				});
 			}
 		}
@@ -522,7 +536,11 @@ public class IndustryCalculator {
 			}
 		} else {
 		}
-		
+
+		if(power != 0) {
+			balanceFragment.element.line(Icon.power.getRegion(), (power > 0 ? "[green]" : "[scarlet]") + ModWork.round(power) + "/sec");
+			balanceFragment.element.color(Pal.engine);
+		}
 		if(airDps != 0 || groundDps != 0) {
 			balanceFragment.element.line(Icon.modeAttack.getRegion(), "[sky]" + ModWork.round(airDps) + " air damage/sec");
 			balanceFragment.element.line(Icon.modeAttack.getRegion(), "[olive]" + ModWork.round(groundDps) + " ground damage/sec");

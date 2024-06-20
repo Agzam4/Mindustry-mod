@@ -1,20 +1,30 @@
 package agzam4;
 
+import static mindustry.Vars.net;
+import static mindustry.Vars.state;
+
 import java.lang.reflect.Field;
 
 import arc.Core;
 import arc.Events;
+import arc.func.Cons;
 import arc.func.Cons2;
 import arc.graphics.Color;
+import arc.graphics.Pixmap;
+import arc.graphics.Pixmaps;
 import arc.input.KeyCode;
 import arc.math.Mathf;
+import arc.scene.style.Drawable;
+import arc.scene.style.TextureRegionDrawable;
 import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.core.UI;
+import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Building;
+import mindustry.gen.Unit;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
@@ -30,11 +40,15 @@ import mindustry.world.consumers.ConsumeItemFilter;
 import mindustry.world.consumers.ConsumeItems;
 import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.consumers.ConsumeLiquids;
+import mindustry.world.consumers.ConsumePower;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.ConstructBlock.ConstructBuild;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
 import mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild;
 import mindustry.world.blocks.power.ConsumeGenerator;
+import mindustry.world.blocks.power.PowerGenerator;
+import mindustry.world.blocks.power.PowerGenerator.GeneratorBuild;
 import mindustry.world.blocks.production.AttributeCrafter;
 import mindustry.world.blocks.production.AttributeCrafter.AttributeCrafterBuild;
 import mindustry.world.blocks.production.Drill;
@@ -282,33 +296,33 @@ public class ModWork {
 	}
 
 	public static final String enToRu[][] = {
-			{"OO", "У"},
-			{"A", "А"},
-			{"B", "Б"},
-			{"C", "С"},
-			{"D", "Д"},
-			{"E", "Е"},
-			{"F", "Ф"},
-			{"G", "Г"},
-			{"H", "Х"},
+			{"OO", "\u0423"},
+			{"A", "\u0410"},
+			{"B", "\u0411"},
+			{"C", "\u0421"},
+			{"D", "\u0414"},
+			{"E", "\u0415"},
+			{"F", "\u0424"},
+			{"G", "\u0413"},
+			{"H", "\u0425"},
 			{"I", "\u0418"},
-			{"J", "ДЖ"},
-			{"K", "К"},
-			{"L", "Л"},
-			{"M", "М"},
-			{"N", "Н"},
-			{"O", "О"},
-			{"P", "П"},
-			{"Q", "К"},
-			{"R", "Р"},
-			{"S", "С"},
-			{"T", "Т"},
-			{"U", "У"},
-			{"V", "В"},
-			{"W", "В"},
-			{"X", "Х"},
-			{"Y", "У"},
-			{"Z", "З"},
+			{"J", "\u0414\u0416"},
+			{"K", "\u041a"},
+			{"L", "\u041b"},
+			{"M", "\u041c"},
+			{"N", "\u041d"},
+			{"O", "\u041e"},
+			{"P", "\u041f"},
+			{"Q", "\u041a"},
+			{"R", "\u0420"},
+			{"S", "\u0421"},
+			{"T", "\u0422"},
+			{"U", "\u0423"},
+			{"V", "\u0412"},
+			{"W", "\u0412"},
+			{"X", "\u0425"},
+			{"Y", "\u0423"},
+			{"Z", "\u0417"},
 	};
 	
 	public static String toRus(String stripName) {
@@ -406,6 +420,14 @@ public class ModWork {
 		}
 	}
 
+	public static void consumePower(Consume consume, Building building, float craftSpeed, Cons<Float> cons) {
+		if(consume instanceof ConsumePower) {
+			ConsumePower power = (ConsumePower) consume;
+			cons.get(power.usage * 60f * building.timeScale());
+		}
+	}
+	
+
 	public static void produceLiquids(Building building, float craftSpeed, Cons2<Liquid, Float> con) {
 		if(building instanceof PumpBuild && building.block() instanceof Pump) {
 			PumpBuild pump = (PumpBuild) building;
@@ -423,9 +445,18 @@ public class ModWork {
 			}
 		}
 	}
+
+	public static void producePower(Building building, float craftSpeed, Cons<Float> con) {
+		if(building instanceof GeneratorBuild) {
+			GeneratorBuild generator = (GeneratorBuild) building;
+			con.get(generator.getPowerProduction() * 60 * building.timeScale());
+		}
+	}
+	
+	
 	
 	public static void produceBlock(Block block, int x, int y, Object config, float craftSpeed,
-			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons) {
+			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons, Cons<Float> powerCons) {
 
 		if(block instanceof Drill) {
 			Drill drill = (Drill) block;
@@ -466,6 +497,10 @@ public class ModWork {
 			if(liquidStack != null) {
 				liquidCons.get(liquidStack.liquid, liquidStack.amount * pump.pumpAmount * 60f);
 			}
+		}
+		if(block instanceof PowerGenerator) {
+			PowerGenerator g = (PowerGenerator) block;
+			powerCons.get(g.powerProduction*60f);
 		}
 	}
 	
@@ -534,8 +569,7 @@ public class ModWork {
     }
 
 	public static void consumeBlock(Block block, int x, int y, Object config, float craftSpeed,
-			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons) {
-
+			Cons2<Item, Float> itemCons, Cons2<Liquid, Float> liquidCons, Cons<Float> powerCons) {
 		if(block.consumers != null) {
 			for (int c = 0; c < block.consumers.length; c++) {
 				Consume consume = block.consumers[c];
@@ -568,6 +602,10 @@ public class ModWork {
 ////					liquidCons.get(filter.it, 60*liquid.amount);
 ////					continue;
 //				}
+				if(consume instanceof ConsumePower) {
+					ConsumePower power = (ConsumePower) consume;
+					powerCons.get(power.usage*60);
+				}
 				if(consume instanceof ConsumeLiquid) {
 					ConsumeLiquid liquid = (ConsumeLiquid) consume;
 					liquidCons.get(liquid.liquid, 60*liquid.amount);
@@ -621,6 +659,7 @@ public class ModWork {
 	
 	public static Seq<ItemStack> getMaximumAcceptedConsumers(Block block) {
 		Building tmp = block.newBuilding();
+		tmp.block = block;
 		
 		Seq<ItemStack> items = new Seq<ItemStack>();
 		
@@ -662,6 +701,39 @@ public class ModWork {
 
 	public static boolean isNetGame() {
 		return Vars.net.active();
+	}
+
+	public static TextureRegionDrawable drawable(String name) {
+		return new TextureRegionDrawable(AgzamMod.sprite(name));
+	}
+
+	public static Drawable drawable(String name, int scale) {
+//		AtlasRegion region = Core.atlas.find("agzam4mod-" + name);
+//		region.texture.setFilter(TextureFilter.mipMapLinearLinear);
+//        if(region.splits != null){
+//            int[] splits = region.splits;
+//            NinePatch patch = new NinePatch(region, splits[0], splits[1], splits[2], splits[3]);
+//            int[] pads = region.pads;
+//            if(pads != null) patch.setPadding(pads[0], pads[1], pads[2], pads[3]);
+//            return new ScaledNinePatchDrawable(patch, scale);
+//        }else{
+//        }
+    	return new TextureRegionDrawable(Core.atlas.find("agzam4mod-" + name), scale);
+	}
+	
+	public static Pixmap createIcon(String name, Color outlineColor, int outlineRadius) {
+		Pixmap p = Pixmaps.outline(Core.atlas.getPixmap("agzam4mod-" + name), outlineColor, outlineRadius);
+        return p;
+	}
+
+	public static boolean canBuild(Unit unit, BuildPlan plan) {
+		if(plan.breaking) return true;
+        if(unit.core() == null) return false;
+		for (int i = 0; i < plan.block.requirements.length; i++) {
+			ItemStack req = plan.block.requirements[i];
+			if(!unit.core().items.has(req.item)) return false;
+		}
+		return true;
 	}
 
 

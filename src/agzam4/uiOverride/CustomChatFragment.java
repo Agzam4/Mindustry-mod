@@ -67,10 +67,7 @@ public class CustomChatFragment extends Table {
 		layout = Reflect.get(UiOverride.oldChatFragment, "layout");
 		history = Reflect.get(UiOverride.oldChatFragment, "history");
 
-//		ChatFragment
-		
         setFillParent(true);
-//        font = Fonts.outline;
         
         history.insert(0, "");
         setup();
@@ -86,8 +83,6 @@ public class CustomChatFragment extends Table {
 			return net.active() && ui.hudfrag.shown;
 		});
 		
-		// короче главное меню >> модификации >> Бразуер модификаций >> в поиск [gold]Agzam[] >> Agzam's Mod >> Скачать
-
 		update(() -> {
 			if(net.active() && input.keyTap(Binding.chat) && (scene.getKeyboardFocus() == chatfield || scene.getKeyboardFocus() == null || ui.minimapfrag.shown()) && !ui.consolefrag.shown()){
 				toggle();
@@ -96,23 +91,6 @@ public class CustomChatFragment extends Table {
 				if(input.keyTap(Binding.chat_history_prev) && historyPos < history.size - 1){
 					if(historyPos == 0){
 						String message = chatfield.getText();
-//						if(mode.prefix.isEmpty()){
-//							if(!message.trim().isEmpty()){
-//								history.insert(0, message);
-//							}
-//						}else{
-//							if(message.startsWith(mode.normalizedPrefix())){
-//								message = message.substring(mode.normalizedPrefix().length());
-//								if(!message.trim().isEmpty()){
-//									history.insert(0, message);
-//								}
-//							}else if(message.startsWith(mode.prefix)){
-//								message = message.substring(mode.prefix.length());
-//								if(!message.trim().isEmpty()){
-//									history.insert(0, message);
-//								}
-//							}
-//						}
 						if(!message.isEmpty()) {
 							history.insert(0, message);
 						}
@@ -185,19 +163,19 @@ public class CustomChatFragment extends Table {
 		chatfield.typed(this::handleType);
 
 		bottom().left().marginBottom(offsety).marginLeft(offsetx * 2).add(fieldlabel).padBottom(6f);
-
 		add(chatfield).padBottom(offsety).padLeft(offsetx).growX().padRight(offsetx).height(28);
-
+        
 		if(Vars.mobile){
 			marginBottom(105f);
 			marginRight(240f);
 		}
 	}
 
+	boolean tips = false;
 	//no mobile support.
 	private void handleType(char c){
 		int cursor = chatfield.getCursorPosition();
-		if(c == ':'){
+		if(c == ':') {
 			int index = chatfield.getText().lastIndexOf(':', cursor - 2);
 			if(index >= 0 && index < cursor){
 				String text = chatfield.getText().substring(index + 1, cursor - 1);
@@ -263,7 +241,7 @@ public class CustomChatFragment extends Table {
 
 		Draw.color();
 
-		if(fadetime > 0 && !shown){
+		if(fadetime > 0 && !shown) {
 			fadetime -= Time.delta / 180f;
 		}
 	}
@@ -416,4 +394,5 @@ public class CustomChatFragment extends Table {
 			return valid.get();
 		}
 	}
+
 }

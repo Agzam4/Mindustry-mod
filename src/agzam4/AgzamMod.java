@@ -4,20 +4,16 @@ import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
 import arc.KeyBinds.Section;
-import arc.audio.Sound;
-import arc.files.Fi;
 import arc.func.Cons;
-import arc.func.Cons2;
-import arc.func.Func;
 import arc.graphics.Color;
-import arc.graphics.Texture;
-import arc.graphics.g2d.Animation;
+import arc.graphics.Texture.TextureFilter;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.TextureAtlas.AtlasRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.input.InputDevice.DeviceType;
 import arc.input.KeyCode;
 import arc.math.Mathf;
-import arc.math.geom.Point2;
+import arc.scene.event.ClickListener;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.ui.Dialog;
@@ -25,13 +21,9 @@ import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
-import arc.util.Nullable;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.Vars;
-import mindustry.content.Blocks;
-import mindustry.content.UnitTypes;
-import mindustry.game.Team;
 import mindustry.game.EventType.ClientServerConnectEvent;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.TapEvent;
@@ -40,19 +32,13 @@ import mindustry.game.EventType.UnitDamageEvent;
 import mindustry.gen.Call;
 import mindustry.gen.Icon;
 import mindustry.gen.Iconc;
-import mindustry.gen.Sounds;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
-import mindustry.maps.Maps.ShuffleMode;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
 import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.SettingsMenuDialog.SettingsTable;
-import mindustry.world.Build;
 import mindustry.world.meta.BuildVisibility;
-
-import java.util.Locale;
 
 import agzam4.ModWork.KeyBinds;
 import agzam4.debug.Debug;
@@ -85,37 +71,11 @@ public class AgzamMod extends Mod {
 	
 	LoadedMod mod;
 	
-	
-	private void test() {
-//		Vars.state.rules.waveSending
-//		Texture texture = new Texture();
-//		UnitTypes.evoke.region = new TextureRegion(null)
-//		Fi.get(pingText).exists()
-//		Mods
-//		Point2.pack(pauseRandomNum, pauseRandomNum)
-//		Mathf.floor(pauseRandomNum)
-//		Fi;
-//		Point2.pack(0, 0);
-//		Point2.unpack(pauseRandomNum);
-//		Team.sharded.data().getUnits(null)
-		
-//		Vars.state.rules.bannedBlocks.add(Blocks.thoriumReactor)
-	}
-	
-	
 	@Override
 	public void init() {
-		
-		
-//		Ref
-//		Core.
-		
 		mod = Vars.mods.getMod("agzam4mod");
-//		DesktopLauncher;
 		MyFonts.load();
 		MyIndexer.init();
-		
-//		Blocks.additiveReconstructor.hasEmoji();
 		
 		try {
 			UiOverride.init();
@@ -166,7 +126,18 @@ public class AgzamMod extends Mod {
 
                 return super.keyDown(event, keyCode);
             }
+            
+            
         });
+		Core.scene.addCaptureListener(new ClickListener() {
+			
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				PlayerAI.onClick(event, x, y);
+			}
+		});
+		
+		
 		boolean needUpdate = UpdateInfo.needUpdate();
 		
 		Cons<SettingsTable> builder = settingsTable -> {
@@ -272,13 +243,14 @@ public class AgzamMod extends Mod {
 			if(e == null) return;
 			if(e.player == null) return;
 			if(e.tile == null) return;
-			UnitSpawner.ontap(e);
+//			UnitSpawner.ontap(e);
 		});
 		
 		Events.run(Trigger.update, () -> {
 			updates++;
 			IndustryCalculator.update();
 			PlayerAI.updatePlayer();
+			UnitSpawner.update();
 //			DamageNumbers.update();
 			if(Vars.player.unit() != null) {
 				if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
@@ -289,6 +261,9 @@ public class AgzamMod extends Mod {
 				}
 			}
 		});
+		Events.run(Trigger.preDraw, () -> {
+			PlayerAI.preDraw();
+		});
 		
 		Events.run(Trigger.drawOver, () -> {
 			CursorTracker.draw();
@@ -296,8 +271,9 @@ public class AgzamMod extends Mod {
 			FireRange.draw();
 			IndustryCalculator.draw();
 			ProcessorGenerator.draw();
+			UnitSpawner.draw();
 			WaveViewer.draw();
-			Draw.color();
+			Draw.reset();
 		});
 		
 		Events.on(UnitDamageEvent.class, e -> {
@@ -374,6 +350,7 @@ public class AgzamMod extends Mod {
 				public void resume() {
 					isPaused = false;
 				}
+				
 			});	
 		}
 			
@@ -530,10 +507,7 @@ public class AgzamMod extends Mod {
         keyBinds.key = newKey;
         keyBinds.put();
     }
-	
-	static TextureRegion sprite(String name) {
-		return new TextureRegion(Core.atlas.find("agzam4mod-" + name));
-	}
+
 	//  Core.settings.put("agzam4mod-units.settings.hideUnitsHotkey", new java.lang.Integer(75))
 	// Core.settings.getInt("agzam4mod-units.settings.hideUnitsHotkey", KeyCode.h.ordinal())
 
@@ -541,5 +515,15 @@ public class AgzamMod extends Mod {
 	
 	public static void lockUnit(boolean b) {
 		lockUnit = b;
+	}
+
+	static TextureRegion sprite(String name) {
+		return Core.atlas.find("agzam4mod-" + name);
+	}
+	
+	public static TextureRegion sprite(String name, int scale) {
+		AtlasRegion a = Core.atlas.find("agzam4mod-" + name);
+		a.texture.setFilter(TextureFilter.mipMapLinearLinear);
+		return a;
 	}
 }

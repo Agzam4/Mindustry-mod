@@ -10,8 +10,6 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.game.Schematic;
 import mindustry.game.Schematic.Stile;
-import mindustry.maps.Maps;
-import mindustry.maps.Maps.ShuffleMode;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.world.blocks.logic.LogicBlock;

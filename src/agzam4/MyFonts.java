@@ -4,28 +4,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import arc.graphics.g2d.TextureRegion;
-import arc.graphics.Pixmap;
-import arc.graphics.Texture;
 import arc.graphics.g2d.Font.Glyph;
 import arc.math.geom.Vec2;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Scaling;
-import mindustry.Vars;
-import mindustry.content.Blocks;
-import mindustry.core.GameState.State;
-import mindustry.ctype.UnlockableContent;
-import mindustry.game.Gamemode;
-import mindustry.graphics.Pixelator;
-import mindustry.mod.Mods;
 import mindustry.ui.Fonts;
 
 public class MyFonts {
 
     private static final int LOG2_PAGE_SIZE = 9;
     private static final int PAGE_SIZE = 1 << LOG2_PAGE_SIZE;
-    private static final int PAGES = 0x10000 / PAGE_SIZE;
+//    private static final int PAGES = 0x10000 / PAGE_SIZE;
 
     private static Seq<TextureRegion> regions;
     

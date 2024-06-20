@@ -1,7 +1,5 @@
 package agzam4;
 
-import java.util.Iterator;
-
 import arc.Events;
 import arc.math.geom.Position;
 import arc.struct.Seq;
@@ -26,9 +24,13 @@ public class MyIndexer {
 		}
 
         Events.on(WorldLoadEndEvent.class, e -> {
+    		for (int i = 0; i < ores.length; i++) {
+    			ores[i].clear();
+    		}
         	for (int y = 0; y < Vars.world.height(); y++) {
         		for (int x = 0; x < Vars.world.width(); x++) {
         			Tile tile = Vars.world.tile(x, y);
+        			if(tile == null) continue;
         			if(tile.drop() != null) {
         				ores[tile.drop().id].add(tile);
         			}

@@ -1,11 +1,14 @@
 package agzam4.utils;
 
 import agzam4.ModWork;
+import arc.Core;
 import arc.graphics.Color;
 import arc.scene.ui.layout.Table;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.UnitTypes;
+import mindustry.core.Control;
+import mindustry.input.DesktopInput;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 
@@ -49,10 +52,10 @@ public class PlayerUtils {
             }).growX().pad(10).padBottom(4).wrapLabel(false).disabled(b -> (ModWork.isNetGame() && Vars.net.client()))
             .row();
             
-            
             t.check(UnitTypes.mono.emoji() + " " + ModWork.bungle("dialog.utils.player-ai"), PlayerAI.enabled, b -> PlayerAI.enabled = b)
             .growX().pad(10).padBottom(4).wrapLabel(false).row();
-
+            
+            	
 //            t.button("Debug", Styles.defaultt, () -> {
 //            	GifTestDrive.show();
 //            }).growX().pad(10).padBottom(4).wrapLabel(false).row();

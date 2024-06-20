@@ -28,6 +28,7 @@ public class BuildTooltip implements IndustryElement {
 		if(line >= lines.size) lines.add(new OverlayLine().before(before).first(c1, s1).second(c2, s2));
 		else lines.get(line).before(before).first(c1, s1).second(c2, s2);
 		line++;
+		color(null);
 	}
 
 	private static final @Nullable TextureRegion nullable = null;

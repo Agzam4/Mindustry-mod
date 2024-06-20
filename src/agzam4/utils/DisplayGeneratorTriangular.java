@@ -35,7 +35,6 @@ public class DisplayGeneratorTriangular {
 	public static void show() {
 		Vars.platform.showMultiFileChooser(file -> {
 			BaseDialog dialog = new BaseDialog(ModWork.bungle("dialog.utils.select-display"));
-//			dialog.title.setColor(Color.white);
 			dialog.titleTable.remove();
 			dialog.closeOnBack();
 

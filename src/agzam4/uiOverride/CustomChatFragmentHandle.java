@@ -6,6 +6,7 @@ import mindustry.ui.fragments.ChatFragment;
 
 public class CustomChatFragmentHandle extends ChatFragment {
 
+	@SuppressWarnings("unused")
 	private Seq<String> history = new Seq<>(); // some other mods compatibility
 	
 	public CustomChatFragment chatfrag;

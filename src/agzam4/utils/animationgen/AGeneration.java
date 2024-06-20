@@ -1,7 +1,6 @@
 package agzam4.utils.animationgen;
 
 import arc.graphics.Pixmap;
-import mindustry.content.Blocks;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 

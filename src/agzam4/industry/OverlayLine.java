@@ -123,10 +123,12 @@ public class OverlayLine {
 
 	public void drawContent(TextureRegion content, float x, float y) {
         Draw.blend(Blending.normal);
-		Draw.color();
+		if(color == null) Draw.color();
+		else Draw.color(color);
 		final float width = content.width*contentHeight()/content.height;
         Draw.rect(content, x + textHeight(), y + textHeight()/2f, width, contentHeight());
         Draw.blend();
+		if(color != null) Draw.color();
 	}
 
 	private float contentHeight() {
