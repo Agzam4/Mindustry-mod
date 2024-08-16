@@ -20,7 +20,9 @@ import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.core.UI;
+import mindustry.entities.bullet.SpaceLiquidBulletType;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Building;
@@ -57,6 +59,7 @@ import mindustry.world.blocks.production.Pump.PumpBuild;
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild;
 import mindustry.world.blocks.production.Separator;
 import mindustry.world.blocks.production.SolidPump;
+import mindustry.world.blocks.production.SolidPump.SolidPumpBuild;
 
 public class ModWork {
 
@@ -177,6 +180,9 @@ public class ModWork {
 		if(block instanceof Reconstructor) {
 			craftSpeed = 60f/((Reconstructor)block).constructTime;
 		}
+		if(block instanceof Separator) {
+			craftSpeed = ((Separator)block).craftTime/60f;
+		}
 		if(block instanceof ConsumeGenerator) {
 			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
 		} else {
@@ -233,6 +239,9 @@ public class ModWork {
 		}
 		if(block instanceof Reconstructor) {
 			craftSpeed = 60f/((Reconstructor)block).constructTime;
+		}
+		if(block instanceof Separator) {
+			craftSpeed = ((Separator)block).craftTime/60f;
 		}
 		if(block instanceof ConsumeGenerator) {
 			craftSpeed = 60f/((ConsumeGenerator)block).itemDuration;
@@ -432,7 +441,13 @@ public class ModWork {
 		if(building instanceof PumpBuild && building.block() instanceof Pump) {
 			PumpBuild pump = (PumpBuild) building;
 			if(pump.liquidDrop != null) {
-				con.get(pump.liquidDrop, pump.amount * ((Pump)building.block()).pumpAmount * 60f * building.timeScale());
+	            float fraction = pump.amount;
+	            if(building instanceof SolidPumpBuild && building.block() instanceof SolidPump) {
+	            	SolidPumpBuild sp = (SolidPumpBuild) pump;
+	            	SolidPump spb = (SolidPump) building.block();
+	            	fraction = Math.max(sp.validTiles + sp.boost + (spb.attribute == null ? 0 : spb.attribute.env()), 0);
+	            }
+				con.get(pump.liquidDrop, fraction * ((Pump)building.block()).pumpAmount * 60f * building.timeScale());
 			}
 		}
 		if(building.block() instanceof GenericCrafter) {
@@ -495,7 +510,11 @@ public class ModWork {
 			Pump pump = (Pump) block;
 			LiquidStack liquidStack = countLiquid(pump, Vars.world.tile(x, y));
 			if(liquidStack != null) {
-				liquidCons.get(liquidStack.liquid, liquidStack.amount * pump.pumpAmount * 60f);
+				if(block instanceof SolidPump) {
+					liquidCons.get(liquidStack.liquid, liquidStack.amount * pump.pumpAmount * 60f / block.size / block.size);
+				} else {
+					liquidCons.get(liquidStack.liquid, liquidStack.amount * pump.pumpAmount * 60f);
+				}
 			}
 		}
 		if(block instanceof PowerGenerator) {

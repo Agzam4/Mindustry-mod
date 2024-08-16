@@ -33,6 +33,8 @@ public class MyIndexer {
         			if(tile == null) continue;
         			if(tile.drop() != null) {
         				ores[tile.drop().id].add(tile);
+        			} else if(tile.block().itemDrop != null) {
+        				ores[tile.block().itemDrop.id].add(tile);
         			}
         		}
         	}

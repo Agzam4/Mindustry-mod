@@ -13,6 +13,7 @@ import arc.math.geom.Position;
 import arc.math.geom.Vec2;
 import arc.scene.Group;
 import arc.scene.event.InputEvent;
+import arc.struct.Queue;
 import arc.util.Log;
 import arc.util.Nullable;
 import arc.util.Time;
@@ -27,6 +28,7 @@ import mindustry.gen.Player;
 import mindustry.gen.Unit;
 import mindustry.input.Binding;
 import mindustry.input.DesktopInput;
+import mindustry.input.MobileInput;
 import mindustry.type.Item;
 import mindustry.world.Tile;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
@@ -43,12 +45,13 @@ public class PlayerAI {
 	static Vec2 camera = new Vec2();
 	static boolean requireUpdateCamera = false;
 	
+	
 	public static void preDraw() {
 		if(Vars.ui.minimapfrag.shown() || playerFragVisible()) {
 			requireUpdateCamera = true;
 			return;
 		}
-		if(enabled && camera != null) {
+		if(enabled && camera != null && !Vars.mobile) {
 			Core.camera.position.set(camera);
 		}
 	}
@@ -75,13 +78,6 @@ public class PlayerAI {
         return false;
 	}
 	
-	public static void onClick(InputEvent event, float x, float y) {
-		Log.info(event);
-		if(event == null) return;
-		if(event.relatedActor == null) return;
-		Log.info(event.relatedActor);
-	}
-
 	public static float panSlowSpeed = 4.5f;
 	public static float panSpeed = 7f;
 	public static float panBoostSpeed = 30f;
@@ -110,6 +106,9 @@ public class PlayerAI {
             camera.x += Mathf.clamp((Core.input.mouseX() - Core.graphics.getWidth() / 2f) * panScale, -1, 1) * panSpeed();
             camera.y += Mathf.clamp((Core.input.mouseY() - Core.graphics.getHeight() / 2f) * panScale, -1, 1) * panSpeed();
         }
+        
+//        DesktopInput
+//        MobileInput
 		
 		if(unit.canBuild()) {
 			BuildPlan plan = unit.buildPlan();
@@ -127,12 +126,12 @@ public class PlayerAI {
 						break;
 					}
 				}
-				
 				if(plan != null && canBuild) {
 					if(unit.within(plan, Vars.tilesize)) return;
 					circle(plan, 1, unit.speed());
 					return;
 				}
+				unit.updateBuilding(canBuild);
 			}
 		}
 		
@@ -164,7 +163,6 @@ public class PlayerAI {
 			}
 			CoreBuild core = unit.closestCore();
 			if(core == null) return;
-			
 			Item target = null;
 			int minCount = core.storageCapacity;
 			for (int i = 0; i < Vars.content.items().size; i++) {

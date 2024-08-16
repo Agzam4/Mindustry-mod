@@ -74,6 +74,7 @@ public class AgzamMod extends Mod {
 	@Override
 	public void init() {
 		mod = Vars.mods.getMod("agzam4mod");
+		ClientPathfinder.init();
 		MyFonts.load();
 		MyIndexer.init();
 		
@@ -129,14 +130,6 @@ public class AgzamMod extends Mod {
             
             
         });
-		Core.scene.addCaptureListener(new ClickListener() {
-			
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				PlayerAI.onClick(event, x, y);
-			}
-		});
-		
 		
 		boolean needUpdate = UpdateInfo.needUpdate();
 		
@@ -174,6 +167,7 @@ public class AgzamMod extends Mod {
             addCheck(table, "show-build-health");
             addCheck(table, "show-units-health");
             addCheck(table, "wave-viewer");
+			addCheck(table, "enemies-paths", false, b -> ClientPathfinder.enabled = b);
 			addKeyBind(table, KeyBinds.hideUnits);
 			addKeyBind(table, KeyBinds.slowMovement);
 
@@ -243,7 +237,8 @@ public class AgzamMod extends Mod {
 			if(e == null) return;
 			if(e.player == null) return;
 			if(e.tile == null) return;
-//			UnitSpawner.ontap(e);
+			EnemiesPaths.tap(e);
+			
 		});
 		
 		Events.run(Trigger.update, () -> {
@@ -251,6 +246,7 @@ public class AgzamMod extends Mod {
 			IndustryCalculator.update();
 			PlayerAI.updatePlayer();
 			UnitSpawner.update();
+			EnemiesPaths.update();
 //			DamageNumbers.update();
 			if(Vars.player.unit() != null) {
 				if(Core.input.keyDown(KeyBinds.slowMovement.key)) {
@@ -273,6 +269,7 @@ public class AgzamMod extends Mod {
 			ProcessorGenerator.draw();
 			UnitSpawner.draw();
 			WaveViewer.draw();
+			EnemiesPaths.draw();
 			Draw.reset();
 		});
 		
@@ -398,9 +395,13 @@ public class AgzamMod extends Mod {
 	private void addCheck(Table table, String settings) {
 		addCheck(table, settings, null);
 	}
-	
+
 	private void addCheck(Table table, String settings, Cons<Boolean> listener) {
-		table.check(ModWork.bungle("settings." + settings), ModWork.setting(settings), b -> {
+		addCheck(table, settings, true, listener);
+	}
+	
+	private void addCheck(Table table, String settings, boolean def, Cons<Boolean> listener) {
+		table.check(ModWork.bungle("settings." + settings), ModWork.settingDef(settings, def), b -> {
 			ModWork.setting(settings, b);
 			if(listener != null) listener.get(b);
 		}).colspan(4).pad(10).padBottom(4).tooltip(ModWork.bungle("settings-tooltip." + settings)).row();;
